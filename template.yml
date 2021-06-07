@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::Serverless-2016-10-31"
+Description: API Gateway Sample
+Parameters:
+  # CertificateId
+  CertificateId:
+    Type: String
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  # Thing
+  Thing1:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: Thing1
+
+  # Policy
+  Policy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument: |-
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "iot:*"
+              ],
+              "Resource": [
+                "*"
+              ]
+            }
+          ]
+        }
+      PolicyName: Policy
+
+  # Attach Policy to Certificate
+  PolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref Policy
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${CertificateId}
+
+  # Attach Certificate to Thing
+  ThingPrincipalAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      Principal: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:cert/${CertificateId}
+      ThingName: !Ref Thing1
+
+  # TopicRule
+  TopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: TopicRule
+      TopicRulePayload:
+        Actions:
+          - Lambda:
+              FunctionArn: !Sub ${TargetLambdaFunction.Arn}
+        AwsIotSqlVersion: "2016-03-23"
+        # Description: String
+        # ErrorAction:
+        #   Action
+        RuleDisabled: false
+        Sql: SELECT encode(*, "base64") as message, topic() as topic FROM 'test/iot'
+
+  #-------------------------------------------------------
+  #   Lambda
+  #-------------------------------------------------------
+  #API Gateway Target Lambda Function
+  TargetLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: Lambda/target_lambda
+      FunctionName: target_lambda
+      Handler: target_lambda.lambda_handler
+      MemorySize: 128
+      Role: !Sub ${LambdaRole.Arn}
+      Runtime: python3.8
+      Timeout: 900
+      #X-Ray
+      Tracing: Active
+      Environment:
+        Variables:
+          Key: Value
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+      Path: /
+      RoleName: LambdaRole
