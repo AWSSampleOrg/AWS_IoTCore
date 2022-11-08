@@ -1,29 +1,18 @@
-#!/bin/bash
-readonly S3_Bucket="**S3 Bucket Name Here**" 2> /dev/null
-readonly StackName="IoT-Core" 2> /dev/null
-readonly COLOR_RED="\033[31m" 2> /dev/null
-readonly COLOR_END="\033[0m" 2> /dev/null
+#!/usr/bin/env bash
 
-echo "S3_Bucket     : ${S3_Bucket}"
-echo "StackName     : ${StackName}"
-echo "CertificateId : ${CertificateId}"
-
+S3_BUCKET="**S3 Bucket Name Here**"
+STACK_NAME="IoT-Core"
 # CertificateId of AWS IoT Core
-CertificateId=$1
-if [ ${CertificateId} = "" ] ; then
-    echo -e "${COLOR_RED}Give CertificateId${COLOR_END}"
-else
-    #package
-    aws cloudformation package \
-        --template-file template.yml \
-        --s3-bucket ${S3_Bucket} \
-        --output-template-file packaged_template.yml
+CERTIFICATE_ID="**CERTIFICATEID**"
 
-    #deploy
-    aws cloudformation deploy \
-        --template-file packaged_template.yml \
-        --stack-name ${StackName} \
-        --parameter-overrides \
-            CertificateId=${CertificateId} \
-        --capabilities CAPABILITY_NAMED_IAM
-fi
+aws cloudformation package \
+    --template-file template.yml \
+    --s3-bucket ${S3_BUCKET} \
+    --output-template-file packaged_template.yml
+
+aws cloudformation deploy \
+    --template-file packaged_template.yml \
+    --stack-name ${STACK_NAME} \
+    --parameter-overrides \
+        CertificateId=${CERTIFICATE_ID} \
+    --capabilities CAPABILITY_NAMED_IAM

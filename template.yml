@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: "AWS::Serverless-2016-10-31"
-Description: API Gateway Sample
+Description: AWS IoT Core Sample
 Parameters:
   # CertificateId
   CertificateId:
@@ -85,7 +85,7 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
-          Key: Value
+          LOG_LEVEL: DEBUG
 
   # ------------------------------------------------------------#
   # IAM

@@ -1,7 +1,3 @@
-/**
- * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0.
- */
 #include <aws/crt/Api.h>
 #include <aws/crt/StlAllocator.h>
 #include <aws/crt/auth/Credentials.h>
@@ -17,7 +13,6 @@
 #include <mutex>
 
 using namespace Aws::Crt;
-
 
 int main(int argc, char *argv[])
 {
@@ -78,7 +73,6 @@ int main(int argc, char *argv[])
         builder = Aws::Iot::MqttClientConnectionConfigBuilder(certificatePath.c_str(), keyPath.c_str());
     }
 
-
     if (!caFile.empty())
     {
         builder.WithCertificateAuthority(caFile.c_str());
@@ -130,7 +124,8 @@ int main(int argc, char *argv[])
     /*
      * This will execute when an mqtt connect has completed or failed.
      */
-    auto onConnectionCompleted = [&](Mqtt::MqttConnection &, int errorCode, Mqtt::ReturnCode returnCode, bool) {
+    auto onConnectionCompleted = [&](Mqtt::MqttConnection &, int errorCode, Mqtt::ReturnCode returnCode, bool)
+    {
         if (errorCode)
         {
             fprintf(stdout, "Connection failed with error %s\n", ErrorDebugString(errorCode));
@@ -151,16 +146,19 @@ int main(int argc, char *argv[])
         }
     };
 
-    auto onInterrupted = [&](Mqtt::MqttConnection &, int error) {
+    auto onInterrupted = [&](Mqtt::MqttConnection &, int error)
+    {
         fprintf(stdout, "Connection interrupted with error %s\n", ErrorDebugString(error));
     };
 
-    auto onResumed = [&](Mqtt::MqttConnection &, Mqtt::ReturnCode, bool) { fprintf(stdout, "Connection resumed\n"); };
+    auto onResumed = [&](Mqtt::MqttConnection &, Mqtt::ReturnCode, bool)
+    { fprintf(stdout, "Connection resumed\n"); };
 
     /*
      * Invoked when a disconnect message has completed.
      */
-    auto onDisconnect = [&](Mqtt::MqttConnection &) {
+    auto onDisconnect = [&](Mqtt::MqttConnection &)
+    {
         {
             fprintf(stdout, "Disconnect completed\n");
             connectionClosedPromise.set_value();
@@ -172,11 +170,11 @@ int main(int argc, char *argv[])
     connection->OnConnectionInterrupted = std::move(onInterrupted);
     connection->OnConnectionResumed = std::move(onResumed);
 
-    connection->SetOnMessageHandler([](Mqtt::MqttConnection &, const String &topic, const ByteBuf &payload) {
+    connection->SetOnMessageHandler([](Mqtt::MqttConnection &, const String &topic, const ByteBuf &payload)
+                                    {
         fprintf(stdout, "Generic Publish received on topic %s, payload:\n", topic.c_str());
         fwrite(payload.buffer, 1, payload.len, stdout);
-        printf("\n");
-    });
+        printf("\n"); });
 
     /*
      * Actually perform the connect dance.
@@ -195,7 +193,8 @@ int main(int argc, char *argv[])
         /*
          * This is invoked upon the receipt of a Publish on a subscribed topic.
          */
-        auto onPublish = [&](Mqtt::MqttConnection &, const String &topic, const ByteBuf &byteBuf) {
+        auto onPublish = [&](Mqtt::MqttConnection &, const String &topic, const ByteBuf &byteBuf)
+        {
             fprintf(stdout, "Publish received on topic %s\n", topic.c_str());
             fprintf(stdout, "\n Message:\n");
             fwrite(byteBuf.buffer, 1, byteBuf.len, stdout);
@@ -207,30 +206,30 @@ int main(int argc, char *argv[])
          */
         std::promise<void> subscribeFinishedPromise;
         auto onSubAck =
-            [&](Mqtt::MqttConnection &, uint16_t packetId, const String &topic, Mqtt::QOS QoS, int errorCode) {
-                if (errorCode)
+            [&](Mqtt::MqttConnection &, uint16_t packetId, const String &topic, Mqtt::QOS QoS, int errorCode)
+        {
+            if (errorCode)
+            {
+                fprintf(stderr, "Subscribe failed with error %s\n", aws_error_debug_str(errorCode));
+                exit(-1);
+            }
+            else
+            {
+                if (!packetId || QoS == AWS_MQTT_QOS_FAILURE)
                 {
-                    fprintf(stderr, "Subscribe failed with error %s\n", aws_error_debug_str(errorCode));
+                    fprintf(stderr, "Subscribe rejected by the broker.");
                     exit(-1);
                 }
                 else
                 {
-                    if (!packetId || QoS == AWS_MQTT_QOS_FAILURE)
-                    {
-                        fprintf(stderr, "Subscribe rejected by the broker.");
-                        exit(-1);
-                    }
-                    else
-                    {
-                        fprintf(stdout, "Subscribe on topic %s on packetId %d Succeeded\n", topic.c_str(), packetId);
-                    }
+                    fprintf(stdout, "Subscribe on topic %s on packetId %d Succeeded\n", topic.c_str(), packetId);
                 }
-                subscribeFinishedPromise.set_value();
-            };
+            }
+            subscribeFinishedPromise.set_value();
+        };
 
         connection->Subscribe(topic.c_str(), AWS_MQTT_QOS_AT_LEAST_ONCE, onPublish, onSubAck);
         subscribeFinishedPromise.get_future().wait();
-
 
         /**
          * send payload
@@ -238,21 +237,20 @@ int main(int argc, char *argv[])
         char rp[62] = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-        };
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
         char tmp[100];
         srand(time(NULL));
-        for(int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++)
         {
             tmp[i] = rp[rand() % 62];
         }
         String input = tmp;
 
-
         ByteBuf payload = ByteBufNewCopy(DefaultAllocator(), (const uint8_t *)input.data(), input.length());
         ByteBuf *payloadPtr = &payload;
 
-        auto onPublishComplete = [payloadPtr](Mqtt::MqttConnection &, uint16_t packetId, int errorCode) {
+        auto onPublishComplete = [payloadPtr](Mqtt::MqttConnection &, uint16_t packetId, int errorCode)
+        {
             aws_byte_buf_clean_up(payloadPtr);
 
             if (packetId)
@@ -266,13 +264,13 @@ int main(int argc, char *argv[])
         };
         connection->Publish(topic.c_str(), AWS_MQTT_QOS_AT_LEAST_ONCE, false, payload, onPublishComplete);
 
-
         /*
          * Unsubscribe from the topic.
          */
         std::promise<void> unsubscribeFinishedPromise;
         connection->Unsubscribe(
-            topic.c_str(), [&](Mqtt::MqttConnection &, uint16_t, int) { unsubscribeFinishedPromise.set_value(); });
+            topic.c_str(), [&](Mqtt::MqttConnection &, uint16_t, int)
+            { unsubscribeFinishedPromise.set_value(); });
         unsubscribeFinishedPromise.get_future().wait();
     }
 

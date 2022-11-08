@@ -1,0 +1,24 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+  },
+  "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "cSpell.enabled": true,
+  "cSpell.words": ["boto3", "mqtt","MQTT"],
+  "[xml]": {
+    "editor.defaultFormatter": "DotJoshJohnson.xml"
+  },
+  "files.associations": {
+    "algorithm": "cpp",
+    "condition_variable": "cpp"
+  }
+}

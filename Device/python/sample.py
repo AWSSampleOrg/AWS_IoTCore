@@ -1,22 +1,15 @@
 # -*- encoding:utf-8 -*-
-import base64
-from datetime import datetime
-import json
-from logging import getLogger, StreamHandler, DEBUG, INFO, WARNING, ERROR, CRITICAL
+from logging import getLogger, StreamHandler, DEBUG
 import os
-import random
-import sys
-import string
-import time
 # Third party
-from awscrt import io, mqtt, auth, http
+from awscrt import io, mqtt
 from awsiot import mqtt_connection_builder
 
 # logger setting
 logger = getLogger(__name__)
 handler = StreamHandler()
 handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LogLevel", DEBUG))
+logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
 logger.addHandler(handler)
 logger.propagate = False
 
@@ -63,7 +56,6 @@ def main():
     disconnect_future = mqtt_connection.disconnect()
     disconnect_future.result()
 
-    return 0
 
 if __name__ == "__main__":
     main()
