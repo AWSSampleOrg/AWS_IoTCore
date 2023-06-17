@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-set -euo
-
-SOURCE_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
-mkdir -p ${SOURCE_DIR}/output && cd ${SOURCE_DIR}/output
+CURRENT_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
+mkdir -p ${CURRENT_DIR}/output && cd ${CURRENT_DIR}/output
 
 
 # Detail Info
@@ -22,7 +20,7 @@ openssl req -x509 -new -nodes \
     -out root_CA_cert_filename.pem \
     -subj "/CN=example.com" \
     -extensions v3_ca \
-    -config ${SOURCE_DIR}/openssl.cnf
+    -config ${CURRENT_DIR}/openssl.cnf
 
 
 
@@ -47,7 +45,7 @@ openssl x509 -req \
     -out verification_cert_filename.pem \
     -days 500 -sha256
 # 5. Register the CA certificate with AWS IoT. Pass in the CA certificate file name and the private key verification certificate file name to the register-ca-certificate command, as follows. For more information, see register-ca-certificate in the AWS CLI Command Reference.
-aws iot register-ca-certificate \
-    --ca-certificate file://root_CA_cert_filename.pem \
-    --verification-cert file://verification_cert_filename.pem \
-    --set-as-active
+# aws iot register-ca-certificate \
+#     --ca-certificate file://root_CA_cert_filename.pem \
+#     --verification-cert file://verification_cert_filename.pem \
+#     --set-as-active

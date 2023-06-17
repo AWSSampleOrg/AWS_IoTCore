@@ -1,36 +1,29 @@
 # AWS IoT Core
 
-(Create CA and X.509 Certificates)[certificates]
-
-# Generate certificates with CLI
-
-1. Create and Register CA certificate with AWS IoT
+# Set up certificates, which contain CA Certificate and X.509, and then deploy AWS IoT Core and AWS Lambda
 
 ```sh
-. certificates/ca_cli.sh
+. set_up.sh
 ```
-
-2. Create and Register client certificate with AWS IoT
-
-```sh
-. certificates/client_cli.sh
-```
-
 
 # Execute source codes on devices
 
-### cpp
+## export AWS IoT endpoint as an environment value
 
 ```sh
-copy certificates
-cd Device/cpp/src
-curl -O https://www.amazontrust.com/repository/AmazonRootCA1.pem
-cp -r ../../../certificates/output/device_cert_filename.pem .
-cp -r ../../../certificates/output/device_cert_key_filename.key .
-cp -r ../../../certificates/output/root_CA_cert_filename.pem .
+# The command shown below will help you know the IoT Endpoint with CLI.
+export AWS_IOT_CORE_ENDPOINT=$(aws iot describe-endpoint \
+  --endpoint-type iot:Data-ATS \
+  --query endpointAddress \
+  --output text)
+```
 
+## cpp
+
+```sh
+cd Device/cpp
 # build source code using cmake
-cd .. && . build.sh
+. build.sh
 # execute program
 ./main
 ```

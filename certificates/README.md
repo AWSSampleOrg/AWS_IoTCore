@@ -6,13 +6,13 @@
 
 # Generate certificates using CLI
 
-1. Create and Register CA certificate with AWS IoT
+1. Create a CA certificate with AWS IoT
 
 ```sh
 . ca_cli.sh
 ```
 
-2. Create and Register client certificate with AWS IoT
+2. Create a client certificate with AWS IoT
 
 ```sh
 . client_cli.sh

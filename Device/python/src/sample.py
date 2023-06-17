@@ -15,11 +15,11 @@ logger.propagate = False
 
 
 # Define ENDPOINT, CLIENT_ID, PATH_TO_CERT, PATH_TO_KEY, PATH_TO_ROOT, MESSAGE, TOPIC, and RANGE
-ENDPOINT = ""
+ENDPOINT = os.getenv("AWS_IOT_CORE_ENDPOINT", "")
 CLIENT_ID = "Thing1"
-PATH_TO_CERT = ""
-PATH_TO_KEY = ""
-PATH_TO_ROOT = ""
+PATH_TO_CERT = "./certificates/device_cert_filename.pem"
+PATH_TO_KEY = "./certificates/device_cert_key_filename.key"
+PATH_TO_ROOT = "./certificates/AmazonRootCA1.pem"
 TOPIC = "test/iot"
 
 def get_connection():

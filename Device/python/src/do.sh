@@ -16,6 +16,13 @@ case $1 in
     "rmi") blue "Remove All Docker Images"
 	        docker image ls -aq | xargs docker image rm -f;;
     "run") blue "Run Docker container"
-	        docker container run --rm ${IMAGE_NAME};;
+            AWS_IOT_CORE_ENDPOINT=$(aws iot describe-endpoint \
+                --endpoint-type iot:Data-ATS \
+                --query endpointAddress \
+                --output text)
+	        docker container run \
+                --rm \
+                -e AWS_IOT_CORE_ENDPOINT="${AWS_IOT_CORE_ENDPOINT}" \
+                ${IMAGE_NAME};;
     *) echo "give me Docker command";;
 esac

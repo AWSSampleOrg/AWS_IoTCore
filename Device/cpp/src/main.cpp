@@ -25,9 +25,10 @@ void test() {
                   << std::endl;
         exit(1);
     }
-    Aws::Crt::String certificatePath = "./device_cert_filename.pem";
-    Aws::Crt::String keyPath = "./device_cert_key_filename.key";
-    Aws::Crt::String caFile = "./AmazonRootCA1.pem";
+    Aws::Crt::String certificatePath =
+        "./certificates/device_cert_filename.pem";
+    Aws::Crt::String keyPath = "./certificates/device_cert_key_filename.key";
+    Aws::Crt::String caFile = "./certificates/AmazonRootCA1.pem";
     Aws::Crt::String topic = "test/iot";
     Aws::Crt::String clientId = "Thing1";
     Aws::Crt::String signingRegion;

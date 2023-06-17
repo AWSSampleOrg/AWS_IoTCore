@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-set -euo
-
-SOURCE_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
-mkdir -p ${SOURCE_DIR}/output && cd ${SOURCE_DIR}/output
+CURRENT_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
+mkdir -p ${CURRENT_DIR}/output && cd ${CURRENT_DIR}/output
 
 # Detail info
 # https://docs.aws.amazon.com/iot/latest/developerguide/create-device-cert.html
@@ -31,9 +29,9 @@ openssl x509 -req \
 #####################################################
 # Register a client certificate
 #####################################################
-aws iot register-certificate \
-    --certificate-pem file://device_cert_filename.pem \
-    --ca-certificate-pem file://root_CA_cert_filename.pem \
-    --set-as-active \
-    --query certificateArn \
-    --output text
+# aws iot register-certificate \
+#     --certificate-pem file://device_cert_filename.pem \
+#     --ca-certificate-pem file://root_CA_cert_filename.pem \
+#     --set-as-active \
+#     --query certificateArn \
+#     --output text

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-S3_BUCKET="**S3 Bucket Name Here**"
+S3_BUCKET=$1
+echo "S3_BUCKET to store Lambda source codes: ${S3_BUCKET}"
+
 STACK_NAME="IoT-Core"
-# CertificateId of AWS IoT Core
-# X.509 certificates authenticate device and client connections. Certificates must be registered with AWS IoT and activated before a device or client can communicate with AWS IoT.
-CLIENT_CERTIFICATE_ID=$1
+CA_PEM_STRING=$(cat certificates/output/root_CA_cert_filename.pem)
+CERTIFICATE_PEM_STRING=$(cat certificates/output/device_cert_filename.pem)
+VERIFICATION_CERTIFICATE_PEM_STRING=$(cat certificates/output/verification_cert_filename.pem)
 
 aws cloudformation package \
     --template-file template.yml \
@@ -15,5 +17,7 @@ aws cloudformation deploy \
     --template-file packaged_template.yml \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
-        CertificateId=${CLIENT_CERTIFICATE_ID} \
+        CACertificatePem="${CA_PEM_STRING}" \
+        CertificatePem="${CERTIFICATE_PEM_STRING}" \
+        VerificationCertificatePem="${VERIFICATION_CERTIFICATE_PEM_STRING}" \
     --capabilities CAPABILITY_NAMED_IAM

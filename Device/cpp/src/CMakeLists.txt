@@ -19,11 +19,13 @@ find_package(aws-crt-cpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} AWS::aws-crt-cpp)
 
 # Copy certificates files
+set(TARGET_CERTIFICATES_DIR $<TARGET_FILE_DIR:${PROJECT_NAME}>/certificates)
 add_custom_command(
     TARGET ${PROJECT_NAME}
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/AmazonRootCA1.pem $<TARGET_FILE_DIR:${PROJECT_NAME}>
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/device_cert_key_filename.key $<TARGET_FILE_DIR:${PROJECT_NAME}>
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/device_cert_filename.pem $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${TARGET_CERTIFICATES_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/certificates/AmazonRootCA1.pem ${TARGET_CERTIFICATES_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/certificates/device_cert_key_filename.key ${TARGET_CERTIFICATES_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/certificates/device_cert_filename.pem ${TARGET_CERTIFICATES_DIR}
     COMMENT "Post Event"
 )
