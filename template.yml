@@ -20,21 +20,14 @@ Resources:
   Policy:
     Type: AWS::IoT::Policy
     Properties:
-      PolicyDocument: |-
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Action": [
-                "iot:*"
-              ],
-              "Resource": [
-                "*"
-              ]
-            }
-          ]
-        }
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:*
+            Resource:
+              - "*"
       PolicyName: Policy
 
   # Attach Policy to Certificate
@@ -68,6 +61,14 @@ Resources:
         Sql: SELECT encode(*, "base64") as message, topic() as topic FROM 'test/iot'
 
   #-------------------------------------------------------
+  # CloudWatch LogGroup
+  #-------------------------------------------------------
+  TargetLambdaFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
+
+  #-------------------------------------------------------
   #   Lambda
   #-------------------------------------------------------
   #API Gateway Target Lambda Function
@@ -79,13 +80,21 @@ Resources:
       Handler: target_lambda.lambda_handler
       MemorySize: 128
       Role: !Sub ${LambdaRole.Arn}
-      Runtime: python3.8
+      Runtime: python3.10
       Timeout: 900
       #X-Ray
       Tracing: Active
       Environment:
         Variables:
           LOG_LEVEL: DEBUG
+
+  IoTCoreLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TargetLambdaFunction
+      Principal: iot.amazonaws.com
+      SourceArn: !GetAtt TopicRule.Arn
 
   # ------------------------------------------------------------#
   # IAM
@@ -104,5 +113,6 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Path: /
       RoleName: LambdaRole

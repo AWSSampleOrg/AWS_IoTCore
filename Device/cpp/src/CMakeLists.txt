@@ -1,7 +1,3 @@
-cmake_minimum_required(VERSION 3.1)
-# note: cxx-17 requires cmake 3.8, cxx-20 requires cmake 3.12
-project(basic-pub-sub CXX)
-
 file(GLOB SRC_FILES
        "*.cpp"
 )
@@ -21,3 +17,13 @@ endif ()
 find_package(aws-crt-cpp REQUIRED)
 
 target_link_libraries(${PROJECT_NAME} AWS::aws-crt-cpp)
+
+# Copy certificates files
+add_custom_command(
+    TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/AmazonRootCA1.pem $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/device_cert_key_filename.key $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/device_cert_filename.pem $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMENT "Post Event"
+)

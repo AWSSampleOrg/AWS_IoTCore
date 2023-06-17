@@ -13,7 +13,11 @@
     "source.fixAll": true
   },
   "cSpell.enabled": true,
-  "cSpell.words": ["boto3", "mqtt","MQTT"],
+  "cSpell.words": [
+    "boto3",
+    "mqtt",
+    "MQTT"
+  ],
   "[xml]": {
     "editor.defaultFormatter": "DotJoshJohnson.xml"
   },

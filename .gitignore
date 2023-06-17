@@ -1,2 +1,6 @@
 Device/cpp/build
-certificates/output
+packaged_template.yml
+/**/*.csr
+/**/*.pem
+/**/*.key
+/**/*.srl

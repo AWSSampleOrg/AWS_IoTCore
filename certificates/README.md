@@ -2,5 +2,18 @@
 
 [See details on AWS docs](https://docs.aws.amazon.com/iot/latest/developerguide/manage-your-CA-certs.html)
 
-1. If you wanna register your CA using CLI, just execute `cli.sh`
-2. See above docs if you wanna use console
+
+
+# Generate certificates using CLI
+
+1. Create and Register CA certificate with AWS IoT
+
+```sh
+. ca_cli.sh
+```
+
+2. Create and Register client certificate with AWS IoT
+
+```sh
+. client_cli.sh
+```
