@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-S3_BUCKET=$1
-echo "S3_BUCKET to store Lambda source codes: ${S3_BUCKET}"
+SOURCE_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
+cd ${SOURCE_DIR}
+
+S3_BUCKET=''
 
 STACK_NAME="IoT-Core"
 CA_PEM_STRING=$(cat certificates/output/root_CA_cert_filename.pem)
@@ -17,7 +19,8 @@ aws cloudformation deploy \
     --template-file packaged_template.yml \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
-        CACertificatePem="${CA_PEM_STRING}" \
-        CertificatePem="${CERTIFICATE_PEM_STRING}" \
-        VerificationCertificatePem="${VERIFICATION_CERTIFICATE_PEM_STRING}" \
+    ProjectPrefix="" \
+    CACertificatePem="${CA_PEM_STRING}" \
+    CertificatePem="${CERTIFICATE_PEM_STRING}" \
+    VerificationCertificatePem="${VERIFICATION_CERTIFICATE_PEM_STRING}" \
     --capabilities CAPABILITY_NAMED_IAM

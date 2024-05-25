@@ -3,7 +3,6 @@
 CURRENT_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
 mkdir -p ${CURRENT_DIR}/output && cd ${CURRENT_DIR}/output
 
-
 # Detail Info
 # https://docs.aws.amazon.com/iot/latest/developerguide/manage-your-CA-certs.html
 
@@ -21,8 +20,6 @@ openssl req -x509 -new -nodes \
     -subj "/CN=example.com" \
     -extensions v3_ca \
     -config ${CURRENT_DIR}/openssl.cnf
-
-
 
 #####################################################
 # Register a CA certificate in DEFAULT mode (CLI)
@@ -49,3 +46,11 @@ openssl x509 -req \
 #     --ca-certificate file://root_CA_cert_filename.pem \
 #     --verification-cert file://verification_cert_filename.pem \
 #     --set-as-active
+
+#####################################################
+# AmazonRootCA1.pem
+#####################################################
+curl -O https://www.amazontrust.com/repository/AmazonRootCA1.pem
+
+# Finished
+cd ${CURRENT_DIR}

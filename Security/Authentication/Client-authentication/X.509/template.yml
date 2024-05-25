@@ -2,6 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: "AWS::Serverless-2016-10-31"
 Description: AWS IoT Core Sample
 Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: ""
+
   CACertificatePem:
     Type: String
   CertificatePem:
@@ -35,7 +39,7 @@ Resources:
   Thing1:
     Type: AWS::IoT::Thing
     Properties:
-      ThingName: Thing1
+      ThingName: !Sub ${ProjectPrefix}Thing1
 
   # Policy
   Policy:
@@ -54,7 +58,17 @@ Resources:
               - iot:Publish
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
-      PolicyName: Policy
+          - Effect: Allow
+            Action:
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*
+          - Effect: Allow
+            Action:
+              - iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+      PolicyName: !Sub ${ProjectPrefix}Policy
 
   # Attach Policy to Certificate
   PolicyPrincipalAttachment:
@@ -74,7 +88,7 @@ Resources:
   TopicRule:
     Type: AWS::IoT::TopicRule
     Properties:
-      RuleName: TopicRule
+      RuleName: !Sub ${ProjectPrefix}TopicRule
       TopicRulePayload:
         Actions:
           - Lambda:
@@ -84,7 +98,7 @@ Resources:
         # ErrorAction:
         #   Action
         RuleDisabled: false
-        Sql: SELECT encode(*, "base64") as message, topic() as topic FROM 'test/iot'
+        Sql: SELECT *, topic() as topic FROM 'test/iot'
 
   #-------------------------------------------------------
   # CloudWatch LogGroup
@@ -94,10 +108,10 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
 
-  AWSIotLogsV2LogGroup:
+  AWSIotLogsV2:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: AWSIotLogsV2LogGroup
+      LogGroupName: AWSIotLogsV2
 
   #-------------------------------------------------------
   #   Lambda
@@ -111,7 +125,7 @@ Resources:
       Handler: target_lambda.lambda_handler
       MemorySize: 128
       Role: !Sub ${LambdaRole.Arn}
-      Runtime: python3.10
+      Runtime: python3.12
       Timeout: 900
       #X-Ray
       Tracing: Active
@@ -146,7 +160,7 @@ Resources:
         - arn:aws:iam::aws:policy/AWSLambda_FullAccess
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Path: /
-      RoleName: LambdaRole
+      RoleName: !Sub ${ProjectPrefix}LambdaRole
 
   IoTCoreLogsRole:
     Type: AWS::IAM::Role
@@ -175,4 +189,4 @@ Resources:
                   - logs:PutRetentionPolicy
                 Resource:
                   - !Sub arn:aws:logs:*:${AWS::AccountId}:log-group:*:log-stream:*
-      RoleName: IoTCoreLogsRole
+      RoleName: !Sub ${ProjectPrefix}IoTCoreLogsRole

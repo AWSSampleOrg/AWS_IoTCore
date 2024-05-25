@@ -1,10 +1,6 @@
 # AWS IoT Core
 
-# Set up certificates, which contain CA Certificate and X.509, and then deploy AWS IoT Core and AWS Lambda
-
-```sh
-. set_up.sh
-```
+https://docs.aws.amazon.com/iot/latest/developerguide/what-is-aws-iot.html
 
 # Execute source codes on devices
 
