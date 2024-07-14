@@ -1,13 +1,7 @@
-Device/cpp/build
+cpp/build
 packaged_template.yml
 /**/*.csr
 /**/*.pem
 /**/*.key
 /**/*.srl
-awscrt
-awscrt-0.20.10.dist-info
-awsiot
-awsiotsdk-1.21.5.dist-info
-_awscrt.abi3.so
-six.py
 __pycache__
