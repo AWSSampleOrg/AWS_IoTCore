@@ -4,7 +4,8 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/CVS": true,
-    "**/.DS_Store": true
+    "**/.DS_Store": true,
+    "**/node_modules": true
   },
   "editor.formatOnSave": true,
   "files.insertFinalNewline": true,
@@ -93,6 +94,7 @@
     "semaphore": "cpp",
     "shared_mutex": "cpp",
     "stop_token": "cpp",
-    "thread": "cpp"
+    "thread": "cpp",
+    "__config": "cpp"
   }
 }
