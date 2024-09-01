@@ -6,6 +6,9 @@ Parameters:
     Type: String
     Default: ""
 
+  IoTCoreRoleArn:
+    Type: String
+
 Resources:
   #-------------------------------------------------------
   #   IoT Core
@@ -18,7 +21,7 @@ Resources:
       # PreProvisioningHook:
       #   PayloadVersion: String
       #   TargetArn: String
-      ProvisioningRoleArn: !Sub ${IoTCoreRole.Arn}
+      ProvisioningRoleArn: !Sub ${IoTCoreRoleArn}
       # Tags:
       #   - Tag
       TemplateBody: |-
@@ -37,7 +40,7 @@ Resources:
           "Mappings": {
             "LocationTable": {
               "Seattle": {
-                "LocationUrl": "https://example.aws"
+                "LocationUrl": "https://aws.amazon.com/"
               }
             }
           },
@@ -194,25 +197,25 @@ Resources:
       Path: /
       RoleName: !Sub ${ProjectPrefix}LambdaRole
 
-  IoTCoreRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - iot.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: aws-iot-role-logging
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: "*"
-                Resource: "*"
-      RoleName: !Sub ${ProjectPrefix}IoTCoreRole
+  # IoTCoreRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - iot.amazonaws.com
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
+  #     Policies:
+  #       - PolicyName: aws-iot-role-logging
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action: "*"
+  #               Resource: "*"
+  #     RoleName: !Sub ${ProjectPrefix}IoTCoreRole

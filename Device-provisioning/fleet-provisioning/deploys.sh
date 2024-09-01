@@ -17,4 +17,5 @@ aws cloudformation deploy \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
     ProjectPrefix="" \
+    IoTCoreRoleArn="" \
     --capabilities CAPABILITY_NAMED_IAM
