@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::Serverless-2016-10-31"
+Description: AWS IoT Core Jobs Template
+Parameters:
+  JobTemplateId:
+    Type: String
+
+  BucketName:
+    Type: String
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  IoTCoreJobTemplate:
+    Type: AWS::IoT::JobTemplate
+    Properties:
+      # AbortConfig: AbortConfig
+      Description: IoTCoreJobTemplate
+      # DestinationPackageVersions:
+      #   - String
+      # Document: String
+      # DocumentSource: String
+      # JobArn: String
+      # JobExecutionsRetryConfig: JobExecutionsRetryConfig
+      # JobExecutionsRolloutConfig: JobExecutionsRolloutConfig
+      JobTemplateId: !Ref JobTemplateId
+      # MaintenanceWindows:
+      #   - MaintenanceWindow
+      # PresignedUrlConfig: PresignedUrlConfig
+      # Tags:
+      #   - Tag
+      # TimeoutConfig: TimeoutConfig
+
+  S3DownloadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policy:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${BucketName}/*"
+      RoleName: S3DownloadRole
