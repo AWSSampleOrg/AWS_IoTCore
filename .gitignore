@@ -1,4 +1,4 @@
-cpp/build
+build
 packaged_template.yml
 /**/*.csr
 /**/*.pem
@@ -6,6 +6,7 @@ packaged_template.yml
 /**/*.srl
 __pycache__
 .env
+certificate
 
 # Logs
 logs
