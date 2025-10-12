@@ -1,0 +1,5 @@
+{
+  "operation": "update",
+  "version": "2.0.1",
+  "file": "${aws:iot:s3-presigned-url-v2:https://s3.<region>.amazonaws.com/<bucket>/AWSIoT/Jobs/test.txt}"
+}

@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::Serverless-2016-10-31"
+Description: AWS IoT Core Sample
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: ""
+
+  CACertificatePem:
+    Type: String
+  CertificatePem:
+    Type: String
+  VerificationCertificatePem:
+    Type: String
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  CACertificate:
+    Type: AWS::IoT::CACertificate
+    Properties:
+      CACertificatePem: !Sub ${CACertificatePem}
+      CertificateMode: DEFAULT
+      Status: ACTIVE
+      VerificationCertificatePem: !Sub ${VerificationCertificatePem}
+
+  ClientCertificate:
+    DependsOn:
+      - CACertificate
+    Type: AWS::IoT::Certificate
+    Properties:
+      CACertificatePem: !Sub ${CACertificatePem}
+      CertificateMode: DEFAULT
+      CertificatePem: !Sub ${CertificatePem}
+      Status: ACTIVE
+
+  # Thing
+  Thing1:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Sub ${ProjectPrefix}Thing1
+
+  # Policy
+  Policy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:Connect
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/*
+          - Effect: Allow
+            Action:
+              - iot:Publish
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+          - Effect: Allow
+            Action:
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*
+          - Effect: Allow
+            Action:
+              - iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+      PolicyName: !Sub ${ProjectPrefix}Policy
+
+  # Attach Policy to Certificate
+  PolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref Policy
+      Principal: !Sub ${ClientCertificate.Arn}
+
+  # Attach Certificate to Thing
+  ThingPrincipalAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      Principal: !Sub ${ClientCertificate.Arn}
+      ThingName: !Ref Thing1
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#

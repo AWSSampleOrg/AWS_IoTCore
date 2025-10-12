@@ -5,7 +5,8 @@ import json
 import sys
 import time
 import threading
-# Third party
+
+import boto3
 from awscrt import io, mqtt
 from awsiot import mqtt_connection_builder
 
@@ -22,7 +23,9 @@ actual_received_count = 0
 expected_received_count = 10
 
 # Define ENDPOINT, CLIENT_ID, PATH_TO_CERT, PATH_TO_KEY, PATH_TO_ROOT, MESSAGE, TOPIC, and RANGE
-ENDPOINT = os.getenv("AWS_IOT_CORE_ENDPOINT", "")
+iot_client = boto3.client('iot')
+ENDPOINT = iot_client.describe_endpoint(endpointType='iot:Data-ATS')['endpointAddress']
+
 CLIENT_ID = "Thing1"
 PATH_TO_CERT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates/output/device_cert_filename.pem")
 PATH_TO_KEY = os.path.join(os.path.dirname(os.path.dirname(__file__)), "certificates/output/device_cert_key_filename.key")
