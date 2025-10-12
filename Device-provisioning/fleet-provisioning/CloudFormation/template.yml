@@ -1,0 +1,232 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: Fleet Provisioning sample
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: ""
+
+  ClientCertificateArn:
+    Type: String
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  ProvisioningTemplate:
+    Type: AWS::IoT::ProvisioningTemplate
+    Properties:
+      Description: Provisioning Template
+      Enabled: true
+      # PreProvisioningHook:
+      #   PayloadVersion: String
+      #   TargetArn: String
+      ProvisioningRoleArn: !Sub ${ProvisioningRole.Arn}
+      TemplateBody: |-
+        {
+          "Parameters": {
+            "DeviceId": {
+              "Type": "String"
+            }
+          },
+          "Resources": {
+            "thing": {
+              "Type": "AWS::IoT::Thing",
+              "Properties": {
+                "ThingName": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "MyDevice-",
+                      {
+                        "Ref": "DeviceId"
+                      }
+                    ]
+                  ]
+                }
+              }
+            },
+            "certificate": {
+              "Type": "AWS::IoT::Certificate",
+              "Properties": {
+                "CertificateId": {
+                  "Ref": "AWS::IoT::Certificate::Id"
+                },
+                "Status": "ACTIVE"
+              }
+            },
+            "policy": {
+              "Type": "AWS::IoT::Policy",
+              "Properties": {
+                "PolicyName": "DevicePolicy"
+              }
+            }
+          }
+        }
+      TemplateName: FleetProvisioningTemplate
+      TemplateType: FLEET_PROVISIONING
+
+  DevicePolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:Connect
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/*
+          - Effect: Allow
+            Action:
+              - iot:Publish
+              - iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+          - Effect: Allow
+            Action:
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*
+      PolicyName: !Sub ${ProjectPrefix}DevicePolicy
+
+  ClaimPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:Connect
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/*
+          - Effect: Allow
+            Action:
+              - iot:Publish
+              - iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
+          - Effect: Allow
+            Action:
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*
+      PolicyName: !Sub ${ProjectPrefix}ClaimPolicy
+
+  PolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref ClaimPolicy
+      Principal: !Sub ${ClientCertificateArn}
+
+  # TopicRule
+  # TopicRule:
+  #   Type: AWS::IoT::TopicRule
+  #   Properties:
+  #     RuleName: !Sub ${ProjectPrefix}TopicRule
+  #     TopicRulePayload:
+  #       Actions:
+  #         - Lambda:
+  #             FunctionArn: !Sub ${TargetLambdaFunction.Arn}
+  #       AwsIotSqlVersion: "2016-03-23"
+  #       # Description: String
+  #       # ErrorAction:
+  #       #   Action
+  #       RuleDisabled: false
+  #       Sql: SELECT *, topic() as topic FROM 'test/iot'
+
+  #-------------------------------------------------------
+  # CloudWatch LogGroup
+  #-------------------------------------------------------
+  # TargetLambdaFunctionLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
+
+  # AWSIotLogsV2:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: AWSIotLogsV2
+
+  #-------------------------------------------------------
+  #   Lambda
+  #-------------------------------------------------------
+  #API Gateway Target Lambda Function
+  # TargetLambdaFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: Lambda/target_lambda
+  #     FunctionName: target_lambda
+  #     Handler: target_lambda.lambda_handler
+  #     MemorySize: 128
+  #     Role: !Sub ${LambdaRole.Arn}
+  #     Runtime: python3.12
+  #     Timeout: 900
+  #     #X-Ray
+  #     Tracing: Active
+  #     Environment:
+  #       Variables:
+  #         LOG_LEVEL: DEBUG
+
+  # IoTCoreLambdaInvokePermission:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     Action: lambda:InvokeFunction
+  #     FunctionName: !Ref TargetLambdaFunction
+  #     Principal: iot.amazonaws.com
+  #     SourceArn: !GetAtt TopicRule.Arn
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#
+  # LambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - lambda.amazonaws.com
+  #           Action:
+  #             - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Path: /
+  #     RoleName: !Sub ${ProjectPrefix}LambdaRole
+
+  ProvisioningRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: aws-iot-role-logging
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iot:CreateThing
+                  - iot:CreateKeysAndCertificate
+                  - iot:DescribeCertificate
+                  - iot:AttachThingPrincipal
+                  - iot:AttachPrincipalPolicy
+                  - iot:RegisterThing
+                  - iot:DescribeThing
+                  - iot:ListThingGroupsForThing
+                  - iot:GetPolicy
+                  - iot:UpdateCertificate
+                Resource: "*"
+      RoleName: !Sub ${ProjectPrefix}ProvisioningRole
