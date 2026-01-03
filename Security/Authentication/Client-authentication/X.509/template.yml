@@ -108,11 +108,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
 
-  AWSIotLogsV2:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: AWSIotLogsV2
-
   #-------------------------------------------------------
   #   Lambda
   #-------------------------------------------------------
