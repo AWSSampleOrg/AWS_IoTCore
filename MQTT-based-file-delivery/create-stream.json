@@ -1,0 +1,14 @@
+{
+  "streamId": "stream12345",
+  "description": "This stream is used for Amazon FreeRTOS OTA Update 12345.",
+  "files": [
+    {
+      "fileId": 123,
+      "s3Location": {
+        "bucket": "<Your S3 bucket>",
+        "key": "IoT/IoTStream"
+      }
+    }
+  ],
+  "roleArn": "arn:aws:iam::123456789012:role/IoTCoreRole"
+}
