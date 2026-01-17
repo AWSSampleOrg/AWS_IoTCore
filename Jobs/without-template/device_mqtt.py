@@ -15,46 +15,56 @@ logger.addHandler(handler)
 logger.propagate = False
 
 # Configuration
-iot_client = boto3.client('iot')
-ENDPOINT = iot_client.describe_endpoint(endpointType='iot:Data-ATS')['endpointAddress']
+iot_client = boto3.client("iot")
+ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
 
 THING_NAME = "Thing1"
-PATH_TO_CERT = os.path.join(os.path.dirname(__file__), "certificates/output/device_cert_filename.pem")
-PATH_TO_KEY = os.path.join(os.path.dirname(__file__), "certificates/output/device_cert_key_filename.key")
-PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/output/AmazonRootCA1.pem")
+PATH_TO_CERT = os.path.join(
+    os.path.dirname(__file__), "certificates/device_cert_filename.pem"
+)
+PATH_TO_KEY = os.path.join(
+    os.path.dirname(__file__), "certificates/device_cert_key_filename.key"
+)
+PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
 
 # Job topics
-NOTIFY_NEXT_TOPIC = f'$aws/things/{THING_NAME}/jobs/notify-next'
-START_NEXT_TOPIC = f'$aws/things/{THING_NAME}/jobs/start-next'
+NOTIFY_NEXT_TOPIC = f"$aws/things/{THING_NAME}/jobs/notify-next"
+START_NEXT_TOPIC = f"$aws/things/{THING_NAME}/jobs/start-next"
+
 
 def on_job_received(mqtt_connection: mqtt.Connection):
     def _on_job_received(topic, payload, **kwargs):
         logger.debug("------------------------on_job_received------------------------")
         job = json.loads(payload)
         logger.info(job)
-        execution = job.get('execution', {})
+        execution = job.get("execution", {})
         if not execution:
             logger.info("No pending jobs")
             return
-        job_id = execution['jobId']
-        job_doc = execution['jobDocument']
+        job_id = execution["jobId"]
+        job_doc = execution["jobDocument"]
         logger.debug("------------------------jobDocument------------------------")
         logger.info(job_doc)
 
         # Update to IN_PROGRESS
-        update_topic = f'$aws/things/{THING_NAME}/jobs/{job_id}/update'
-        mqtt_connection.publish(topic=update_topic, payload=json.dumps({
-            'status': 'IN_PROGRESS'
-        }), qos=mqtt.QoS.AT_LEAST_ONCE)
+        update_topic = f"$aws/things/{THING_NAME}/jobs/{job_id}/update"
+        mqtt_connection.publish(
+            topic=update_topic,
+            payload=json.dumps({"status": "IN_PROGRESS"}),
+            qos=mqtt.QoS.AT_LEAST_ONCE,
+        )
         logger.info("Status: IN_PROGRESS")
 
         # Update to SUCCEEDED
-        mqtt_connection.publish(topic=update_topic, payload=json.dumps({
-            'status': 'SUCCEEDED'
-        }), qos=mqtt.QoS.AT_LEAST_ONCE)
+        mqtt_connection.publish(
+            topic=update_topic,
+            payload=json.dumps({"status": "SUCCEEDED"}),
+            qos=mqtt.QoS.AT_LEAST_ONCE,
+        )
         logger.info("Status: SUCCEEDED")
 
     return _on_job_received
+
 
 def get_connection() -> mqtt.Connection:
     event_loop_group = io.EventLoopGroup(1)
@@ -68,13 +78,14 @@ def get_connection() -> mqtt.Connection:
         ca_filepath=PATH_TO_ROOT,
         client_id=THING_NAME,
         clean_session=False,
-        keep_alive_secs=6
+        keep_alive_secs=6,
     )
     logger.debug(f"Connecting to {ENDPOINT} with client ID '{THING_NAME}'...")
     connect_future = mqtt_connection.connect()
     connect_future.result()
 
     return mqtt_connection
+
 
 def main():
     mqtt_connection = get_connection()
@@ -84,13 +95,17 @@ def main():
     subscribe_future, packet_id = mqtt_connection.subscribe(
         topic=NOTIFY_NEXT_TOPIC,
         qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_job_received(mqtt_connection)
+        callback=on_job_received(mqtt_connection),
     )
     subscribe_result = subscribe_future.result()
-    logger.debug(f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}")
+    logger.debug(
+        f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
+    )
 
     # Request next job
-    mqtt_connection.publish(topic=START_NEXT_TOPIC, payload=json.dumps({}), qos=mqtt.QoS.AT_LEAST_ONCE)
+    mqtt_connection.publish(
+        topic=START_NEXT_TOPIC, payload=json.dumps({}), qos=mqtt.QoS.AT_LEAST_ONCE
+    )
     logger.debug("Requested next job\n")
 
     # Keep running
@@ -101,6 +116,7 @@ def main():
         logger.info("\nDisconnecting...")
         disconnect_future = mqtt_connection.disconnect()
         disconnect_future.result()
+
 
 if __name__ == "__main__":
     main()

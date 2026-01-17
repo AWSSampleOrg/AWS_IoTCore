@@ -6,41 +6,10 @@ Parameters:
     Type: String
     Default: ""
 
-  CACertificatePem:
-    Type: String
-  CertificatePem:
-    Type: String
-  VerificationCertificatePem:
-    Type: String
-
 Resources:
   #-------------------------------------------------------
   #   IoT Core
   #-------------------------------------------------------
-  CACertificate:
-    Type: AWS::IoT::CACertificate
-    Properties:
-      CACertificatePem: !Sub ${CACertificatePem}
-      CertificateMode: DEFAULT
-      Status: ACTIVE
-      VerificationCertificatePem: !Sub ${VerificationCertificatePem}
-
-  ClientCertificate:
-    DependsOn:
-      - CACertificate
-    Type: AWS::IoT::Certificate
-    Properties:
-      CACertificatePem: !Sub ${CACertificatePem}
-      CertificateMode: DEFAULT
-      CertificatePem: !Sub ${CertificatePem}
-      Status: ACTIVE
-
-  # Thing
-  Thing1:
-    Type: AWS::IoT::Thing
-    Properties:
-      ThingName: !Sub ${ProjectPrefix}Thing1
-
   # Policy
   Policy:
     Type: AWS::IoT::Policy
@@ -70,20 +39,6 @@ Resources:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/*
       PolicyName: !Sub ${ProjectPrefix}Policy
 
-  # Attach Policy to Certificate
-  PolicyPrincipalAttachment:
-    Type: AWS::IoT::PolicyPrincipalAttachment
-    Properties:
-      PolicyName: !Ref Policy
-      Principal: !Sub ${ClientCertificate.Arn}
-
-  # Attach Certificate to Thing
-  ThingPrincipalAttachment:
-    Type: AWS::IoT::ThingPrincipalAttachment
-    Properties:
-      Principal: !Sub ${ClientCertificate.Arn}
-      ThingName: !Ref Thing1
-
   # TopicRule
   TopicRule:
     Type: AWS::IoT::TopicRule
@@ -92,7 +47,7 @@ Resources:
       TopicRulePayload:
         Actions:
           - Lambda:
-              FunctionArn: !Sub ${TargetLambdaFunction.Arn}
+              FunctionArn: !Sub ${IoTRuleTriggeredLambda.Arn}
         AwsIotSqlVersion: "2016-03-23"
         # Description: String
         # ErrorAction:
@@ -103,24 +58,23 @@ Resources:
   #-------------------------------------------------------
   # CloudWatch LogGroup
   #-------------------------------------------------------
-  TargetLambdaFunctionLogGroup:
+  IoTRuleTriggeredLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
+      LogGroupName: !Sub /aws/lambda/${IoTRuleTriggeredLambda}
 
   #-------------------------------------------------------
   #   Lambda
   #-------------------------------------------------------
-  #API Gateway Target Lambda Function
-  TargetLambdaFunction:
+  IoTRuleTriggeredLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: Lambda/target_lambda
-      FunctionName: target_lambda
-      Handler: target_lambda.lambda_handler
+      CodeUri: Lambda
+      FunctionName: IoTRuleTriggeredLambda
+      Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !Sub ${LambdaRole.Arn}
-      Runtime: python3.12
+      Runtime: python3.14
       Timeout: 900
       #X-Ray
       Tracing: Active
@@ -132,7 +86,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref TargetLambdaFunction
+      FunctionName: !Ref IoTRuleTriggeredLambda
       Principal: iot.amazonaws.com
       SourceArn: !GetAtt TopicRule.Arn
 

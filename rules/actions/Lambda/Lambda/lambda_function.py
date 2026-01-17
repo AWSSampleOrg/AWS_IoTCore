@@ -2,7 +2,6 @@
 import json
 from logging import getLogger, StreamHandler, DEBUG
 import os
-# Third party
 import boto3
 
 # logger setting
@@ -14,13 +13,10 @@ logger.addHandler(handler)
 logger.propagate = False
 
 # IoT Core
-iot_core = boto3.client('iot-data')
+iot_core = boto3.client("iot-data")
 
 
-def lambda_handler(event,context):
+def lambda_handler(event, context):
     logger.info(event)
 
-    return {
-        "statusCode" : 200,
-        "body" : json.dumps({"message" : "OK"})
-    }
+    return {"statusCode": 200, "body": json.dumps({"message": "OK"})}

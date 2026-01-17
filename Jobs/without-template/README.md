@@ -1,12 +1,12 @@
 https://docs.aws.amazon.com/iot/latest/developerguide/iot-jobs.html
 
+# Create X.509 certificates for a thing
+
+Check `Security/Authentication/Client-authentication/X.509/`
+
 # Create a thing.
 
 ```sh
-cd certificates
-./ca_cli.sh
-./client_cli.sh
-cd ..
 ./deploy.sh
 ```
 

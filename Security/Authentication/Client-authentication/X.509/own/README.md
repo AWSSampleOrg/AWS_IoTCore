@@ -2,23 +2,23 @@
 
 [See details on AWS docs](https://docs.aws.amazon.com/iot/latest/developerguide/manage-your-CA-certs.html)
 
-
-
 # Generate certificates using CLI
 
-1. cd
+1. Create a CA certificate.
+
+- Create a `SNI_ONLY` CA certificate
 
 ```sh
-cd certificates
+. ca_sni_only.sh
 ```
 
-2. Create a CA certificate with AWS IoT
+- Create a `DEFAULT` CA certificate
 
 ```sh
-. ca_cli.sh
+. ca_default.sh
 ```
 
-3. Create a client certificate with AWS IoT
+2. Create a client certificate
 
 ```sh
 . client_cli.sh

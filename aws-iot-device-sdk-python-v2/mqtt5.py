@@ -22,15 +22,13 @@ ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAd
 CLIENT_ID = "Thing1"
 PATH_TO_CERT = os.path.join(
     os.path.dirname(__file__),
-    "certificates/output/device_cert_filename.pem",
+    "certificates/device_cert_filename.pem",
 )
 PATH_TO_KEY = os.path.join(
     os.path.dirname(__file__),
-    "certificates/output/device_cert_key_filename.key",
+    "certificates/device_cert_key_filename.key",
 )
-PATH_TO_ROOT = os.path.join(
-    os.path.dirname(__file__), "certificates/output/AmazonRootCA1.pem"
-)
+PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
 TOPIC = "test/iot"
 
 # --------------------------------- ARGUMENT PARSING END -----------------------------------------

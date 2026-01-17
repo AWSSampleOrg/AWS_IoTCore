@@ -1,6 +1,7 @@
 build
 packaged_template.yml
 /**/*.csr
+/**/*.crt
 /**/*.pem
 /**/*.key
 /**/*.srl

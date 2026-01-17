@@ -6,9 +6,9 @@ cd ${SOURCE_DIR}
 S3_BUCKET=''
 
 STACK_NAME="IoT-Core-Job-Template"
-CA_PEM_STRING=$(cat certificates/output/root_CA_cert_filename.pem)
-CERTIFICATE_PEM_STRING=$(cat certificates/output/device_cert_filename.pem)
-VERIFICATION_CERTIFICATE_PEM_STRING=$(cat certificates/output/verification_cert_filename.pem)
+CA_PEM_STRING=$(cat certificates/root_CA_cert_filename.pem)
+CERTIFICATE_PEM_STRING=$(cat certificates/device_cert_filename.pem)
+VERIFICATION_CERTIFICATE_PEM_STRING=$(cat certificates/verification_cert_filename.pem)
 
 aws cloudformation package \
     --template-file template.yml \
