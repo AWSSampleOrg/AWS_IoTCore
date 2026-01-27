@@ -3,6 +3,7 @@ packaged_template.yml
 /**/*.csr
 /**/*.crt
 /**/*.pem
+/**/*.pub
 /**/*.key
 /**/*.srl
 __pycache__

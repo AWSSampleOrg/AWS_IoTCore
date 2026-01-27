@@ -1,0 +1,163 @@
+# -*- encoding:utf-8 -*-
+from logging import getLogger, StreamHandler, DEBUG
+import os
+import json
+import sys
+import time
+import threading
+
+import boto3
+import awscrt
+from awsiot import mqtt_connection_builder
+
+# logger setting
+logger = getLogger(__name__)
+handler = StreamHandler()
+handler.setLevel(DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger.addHandler(handler)
+logger.propagate = False
+
+received_all_event = threading.Event()
+
+# Define ENDPOINT, CLIENT_ID, PATH_TO_ROOT, MESSAGE, TOPIC, and RANGE
+iot_client = boto3.client("iot")
+ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
+
+authorizer_description = iot_client.describe_authorizer(
+    authorizerName="without-token-authorizer"
+)["authorizerDescription"]
+CLIENT_ID = "Thing1"
+PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
+TOPIC = "test/iot"
+
+
+# Callback when connection is accidentally lost.
+def on_connection_interrupted(connection: awscrt.mqtt.Connection, error, **kwargs):
+    logger.debug(f"Connection interrupted. error: {error}")
+
+
+# Callback when an interrupted connection is re-established.
+def on_connection_resumed(
+    connection: awscrt.mqtt.Connection,
+    return_code: awscrt.mqtt.ConnectReturnCode,
+    session_present: bool,
+    **kwargs,
+):
+    logger.debug(
+        f"Connection resumed. return_code: {return_code} session_present: {session_present}"
+    )
+
+    if return_code == awscrt.mqtt.ConnectReturnCode.ACCEPTED and not session_present:
+        logger.debug("Session did not persist. Resubscribing to existing topics...")
+        resubscribe_future, _ = connection.resubscribe_existing_topics()
+
+        # Cannot synchronously wait for resubscribe result because we're on the connection's event-loop thread,
+        # evaluate result with a callback instead.
+        resubscribe_future.add_done_callback(on_resubscribe_complete)
+
+
+def on_resubscribe_complete(resubscribe_future):
+    resubscribe_results = resubscribe_future.result()
+    logger.debug(f"Resubscribe results: {resubscribe_results}")
+
+    for topic, qos in resubscribe_results["topics"]:
+        if qos is None:
+            sys.exit(f"Server rejected resubscribe to topic: {topic}")
+
+
+# Callback when the subscribed topic receives a message
+def on_message_received(
+    topic: str, payload: bytes, dup: bool, qos: awscrt.mqtt.QoS, retain: bool, **kwargs
+):
+    logger.debug("on_message_received")
+    logger.debug(
+        {"topic": topic, "payload": payload, "dup": dup, "qos": qos, "retain": retain}
+    )
+    received_all_event.set()
+
+
+# Callback when the connection successfully connects
+def on_connection_success(connection: awscrt.mqtt.Connection, callback_data):
+    assert isinstance(callback_data, awscrt.mqtt.OnConnectionSuccessData)
+    logger.debug(
+        f"Connection Successful with return code: {callback_data.return_code} session present: {callback_data.session_present}"
+    )
+
+
+# Callback when a connection attempt fails
+def on_connection_failure(connection: awscrt.mqtt.Connection, callback_data):
+    assert isinstance(callback_data, awscrt.mqtt.OnConnectionFailureData)
+    logger.debug(f"Connection failed with error code: {callback_data.error}")
+
+
+# Callback when a connection has been disconnected or shutdown successfully
+def on_connection_closed(connection: awscrt.mqtt.Connection, callback_data):
+    logger.debug("Connection closed")
+
+
+def get_connection():
+    # Spin up resources
+    event_loop_group = awscrt.io.EventLoopGroup(1)
+    host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
+    client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
+    mqtt_connection = mqtt_connection_builder.direct_with_custom_authorizer(
+        auth_username="auth_username",
+        auth_authorizer_name=authorizer_description["authorizerName"],
+        auth_password="auth_password",
+        endpoint=ENDPOINT,
+        client_bootstrap=client_bootstrap,
+        ca_filepath=PATH_TO_ROOT,
+        on_connection_interrupted=on_connection_interrupted,
+        on_connection_resumed=on_connection_resumed,
+        client_id=CLIENT_ID,
+        # Persistent session
+        # https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-persistent-sessions
+        clean_session=False,
+        keep_alive_secs=6,
+        on_connection_success=on_connection_success,
+        on_connection_failure=on_connection_failure,
+        on_connection_closed=on_connection_closed,
+    )
+
+    logger.debug("Connecting to %s with client ID '%s'...", ENDPOINT, CLIENT_ID)
+    # Make the connect() call
+    connect_future = mqtt_connection.connect()
+    # Future.result() waits until a result is available
+    connect_future.result()
+
+    return mqtt_connection
+
+
+def main():
+    mqtt_connection = get_connection()
+
+    logger.debug(f"Subscribing to topic '{TOPIC}'...")
+    subscribe_future, packet_id = mqtt_connection.subscribe(
+        topic=TOPIC, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
+    )
+    subscribe_result = subscribe_future.result()
+    logger.debug(
+        f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
+    )
+
+    data = json.dumps({"index": 0})
+    logger.debug(data)
+    mqtt_connection.publish(
+        topic=TOPIC, payload=data, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+    )
+    time.sleep(1)
+
+    # Wait for all messages to be received.
+    # This waits forever if count was set to 0.
+    if received_all_event.is_set():
+        logger.debug("Waiting for all messages to be received...")
+
+    received_all_event.wait()
+
+    disconnect_future = mqtt_connection.disconnect()
+    disconnect_future.result()
+
+
+if __name__ == "__main__":
+    main()
