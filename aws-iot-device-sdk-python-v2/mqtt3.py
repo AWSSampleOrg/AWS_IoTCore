@@ -6,9 +6,9 @@ import sys
 import time
 import threading
 
-import boto3
 import awscrt
 from awsiot import mqtt_connection_builder
+import boto3
 
 # logger setting
 logger = getLogger(__name__)

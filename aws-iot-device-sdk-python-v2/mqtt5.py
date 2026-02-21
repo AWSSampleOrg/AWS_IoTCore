@@ -1,7 +1,9 @@
-import os
-import threading
-import time
+# -*- encoding:utf-8 -*-
 from logging import getLogger, StreamHandler, DEBUG
+import os
+import json
+import time
+import threading
 from awsiot import mqtt5_client_builder
 
 from awscrt import mqtt5
@@ -16,7 +18,6 @@ logger.addHandler(handler)
 logger.propagate = False
 
 
-# --------------------------------- ARGUMENT PARSING -----------------------------------------
 iot_client = boto3.client("iot")
 ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
 CLIENT_ID = "Thing1"
@@ -128,7 +129,7 @@ def get_connection():
     return mqtt_connection
 
 
-if __name__ == "__main__":
+def main():
     mqtt_connection = get_connection()
     subscribe_future = mqtt_connection.subscribe(
         subscribe_packet=mqtt5.SubscribePacket(
@@ -138,12 +139,22 @@ if __name__ == "__main__":
         )
     )
     suback = subscribe_future.result(TIMEOUT)
-    logger.debug("Subscribed to: {}\n".format(TOPIC))
-    logger.debug("Waiting for messages (Ctrl+C to exit)...")
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.debug("\nStopping...")
+    logger.debug(
+        f"Subscribed: {suback.reason_string}, user_properties: {suback.user_properties}, reason_codes: {suback.reason_codes}"
+    )
+
+    data = json.dumps({"index": 0})
+    logger.debug(data)
+    mqtt_connection.publish(
+        publish_packet=mqtt5.PublishPacket(
+            topic=TOPIC, payload=data, qos=mqtt5.QoS.AT_LEAST_ONCE
+        )
+    )
+    time.sleep(1)
+
     mqtt_connection.stop()
     stopped_event.wait(TIMEOUT)
+
+
+if __name__ == "__main__":
+    main()
