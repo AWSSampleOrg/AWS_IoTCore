@@ -1,10 +1,10 @@
 # MQTT 3.1.1: Clean Session
 
-In MQTT 3.1.1, session persistence is controlled entirely by the cleanSession flag in the CONNECT packet.
+In MQTT 3.1.1, session persistence is controlled entirely by the cleanSession flag in the `CONNECT` packet.
 
-- cleanSession = 1 (Clean Session): The broker and client discard any previous session state and start a new one. This session lasts only as long as the network connection is active; no state data is stored once the client disconnects.
+- cleanSession = 1 (Clean Session): You create an MQTT persistent session by sending a `CONNECT` message and setting the cleanSession flag to 0. If no session exists for the client sending the `CONNECT` message, a new persistent session is created. If a session already exists for the client, the client resumes the existing session. The broker and client discard any previous session state and start a new one. This session lasts only as long as the network connection is active; no state data is stored once the client disconnects.
 
-- cleanSession = 0 (Persistent Session): The broker attempts to resume a session associated with the client ID. If no session exists, it creates a new one. After the client disconnects, the broker stores the session state (subscriptions and unacknowledged messages) so they are available when the client reconnects.
+- cleanSession = 0 (Persistent Session): To create a clean session, you send a `CONNECT` message and set the cleanSession flag to 1, and the broker will not store any session state when the client disconnects. The broker attempts to resume a session associated with the client ID. If no session exists, it creates a new one. After the client disconnects, the broker stores the session state (subscriptions and unacknowledged messages) so they are available when the client reconnects.
 
 **Session duration is controlled by the broker's global settings (e.g., 1 hour in AWS)**
 

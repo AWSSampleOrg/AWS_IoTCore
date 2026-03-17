@@ -4,15 +4,15 @@
 
 # Generate certificates using CLI
 
-1. Create a CA certificate.
+1. Create a `SNI_ONLY` CA certificate or `DEFAULT` CA certificate.
 
-- Create a `SNI_ONLY` CA certificate
+- SNI_ONLY
 
 ```sh
 . ca_sni_only.sh
 ```
 
-- Create a `DEFAULT` CA certificate
+- DEFAULT
 
 ```sh
 . ca_default.sh

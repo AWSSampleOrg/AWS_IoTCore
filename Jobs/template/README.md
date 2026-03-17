@@ -18,7 +18,7 @@ Replace `bucket` with your own.
 aws s3 cp test.txt s3://<bucket>/AWSIoT/Jobs/test.txt
 ```
 
-# Create a AWS IoT Job
+# Create an AWS IoT Job
 
 1. Replace `region` and `bucket` in `job_document.json` with your own.
 

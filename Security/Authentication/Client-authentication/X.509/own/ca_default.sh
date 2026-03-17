@@ -28,7 +28,8 @@ openssl genrsa -out verification_cert_key_filename.key 2048
 # 3. Create a certificate signing request (CSR) for the private key verification certificate. Set the Common Name field of the certificate to the registrationCode returned by get-registration-code.
 openssl req -new \
     -key verification_cert_key_filename.key \
-    -out verification_cert_csr_filename.csr
+    -out verification_cert_csr_filename.csr \
+    -subj "/CN=${registration_code}"
 # 4. Use the CSR to create a private key verification certificate:
 openssl x509 -req \
     -in verification_cert_csr_filename.csr \

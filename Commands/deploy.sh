@@ -5,7 +5,7 @@ cd ${SOURCE_DIR}
 
 S3_BUCKET=''
 
-STACK_NAME="IoT-Core-Job-Template"
+STACK_NAME="IoT-Core-Command"
 CERTIFICATE_ARN=''
 
 aws cloudformation package \
@@ -18,5 +18,5 @@ aws cloudformation deploy \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
     ProjectPrefix="" \
-    CertificateArn="${CERTIFICATE_ARN}" \
+    CertificateArn="${CA_PEM_STRING}" \
     --capabilities CAPABILITY_NAMED_IAM

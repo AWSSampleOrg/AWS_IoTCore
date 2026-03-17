@@ -5,10 +5,8 @@ cd ${SOURCE_DIR}
 
 S3_BUCKET=''
 
-STACK_NAME="IoT-Core-Job-Template"
-CA_PEM_STRING=$(cat certificates/root_CA_cert_filename.pem)
-CERTIFICATE_PEM_STRING=$(cat certificates/device_cert_filename.pem)
-VERIFICATION_CERTIFICATE_PEM_STRING=$(cat certificates/verification_cert_filename.pem)
+STACK_NAME="IoT-Core-Without-Job-Template"
+CERTIFICATE_ARN=''
 
 aws cloudformation package \
     --template-file template.yml \
@@ -20,7 +18,5 @@ aws cloudformation deploy \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
     ProjectPrefix="" \
-    CACertificatePem="${CA_PEM_STRING}" \
-    CertificatePem="${CERTIFICATE_PEM_STRING}" \
-    VerificationCertificatePem="${VERIFICATION_CERTIFICATE_PEM_STRING}" \
+    CertificateArn="${CA_PEM_STRING}" \
     --capabilities CAPABILITY_NAMED_IAM

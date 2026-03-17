@@ -11,7 +11,7 @@ Parameters:
 
 Resources:
   #-------------------------------------------------------
-  #   IoT Core
+  # IoT Core
   #-------------------------------------------------------
   ProvisioningTemplate:
     Type: AWS::IoT::ProvisioningTemplate
@@ -120,79 +120,9 @@ Resources:
       PolicyName: !Ref ClaimPolicy
       Principal: !Sub ${ClientCertificateArn}
 
-  # TopicRule
-  # TopicRule:
-  #   Type: AWS::IoT::TopicRule
-  #   Properties:
-  #     RuleName: !Sub ${ProjectPrefix}TopicRule
-  #     TopicRulePayload:
-  #       Actions:
-  #         - Lambda:
-  #             FunctionArn: !Sub ${TargetLambdaFunction.Arn}
-  #       AwsIotSqlVersion: "2016-03-23"
-  #       # Description: String
-  #       # ErrorAction:
-  #       #   Action
-  #       RuleDisabled: false
-  #       Sql: SELECT *, topic() as topic FROM 'test/iot'
-
   #-------------------------------------------------------
-  # CloudWatch LogGroup
-  #-------------------------------------------------------
-  # TargetLambdaFunctionLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   Properties:
-  #     LogGroupName: !Sub /aws/lambda/${TargetLambdaFunction}
-
-  #-------------------------------------------------------
-  #   Lambda
-  #-------------------------------------------------------
-  #API Gateway Target Lambda Function
-  # TargetLambdaFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: Lambda/target_lambda
-  #     FunctionName: target_lambda
-  #     Handler: target_lambda.lambda_handler
-  #     MemorySize: 128
-  #     Role: !Sub ${LambdaRole.Arn}
-  #     Runtime: python3.12
-  #     Timeout: 900
-  #     #X-Ray
-  #     Tracing: Active
-  #     Environment:
-  #       Variables:
-  #         LOG_LEVEL: DEBUG
-
-  # IoTCoreLambdaInvokePermission:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !Ref TargetLambdaFunction
-  #     Principal: iot.amazonaws.com
-  #     SourceArn: !GetAtt TopicRule.Arn
-
-  # ------------------------------------------------------------#
   # IAM
-  # ------------------------------------------------------------#
-  # LambdaRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - lambda.amazonaws.com
-  #           Action:
-  #             - sts:AssumeRole
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/AWSLambda_FullAccess
-  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  #     Path: /
-  #     RoleName: !Sub ${ProjectPrefix}LambdaRole
-
+  #-------------------------------------------------------
   ProvisioningRole:
     Type: AWS::IAM::Role
     Properties:
