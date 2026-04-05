@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: IoT Core Role Alias for authorizing direct AWS service calls
+
+Parameters:
+  CertificateArn:
+    Type: String
+
+Resources:
+  RoleAliasTestThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: RoleAliasTestThing
+
+  ThingPrincipalAttachment:
+    Type: AWS::IoT::ThingPrincipalAttachment
+    Properties:
+      Principal: !Sub ${CertificateArn}
+      ThingName: !Ref RoleAliasTestThing
+
+  PolicyPrincipalAttachment:
+    Type: AWS::IoT::PolicyPrincipalAttachment
+    Properties:
+      PolicyName: !Ref IoTPolicy
+      Principal: !Sub ${CertificateArn}
+
+  IoTRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: credentials.iot.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: IoTDevicePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                Resource: "*"
+
+  IoTRoleAlias:
+    Type: AWS::IoT::RoleAlias
+    Properties:
+      RoleAlias: !Sub iot-role-alias-stack-role-alias
+      RoleArn: !GetAtt IoTRole.Arn
+      CredentialDurationSeconds: 3600
+
+  IoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: iot:AssumeRoleWithCertificate
+            Resource: !GetAtt IoTRoleAlias.RoleAliasArn

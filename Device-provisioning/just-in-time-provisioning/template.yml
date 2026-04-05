@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: JITP - Complete Setup
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: jitp
+
+Resources:
+  ThingType:
+    Type: AWS::IoT::ThingType
+    Properties:
+      ThingTypeName: !Sub ${Prefix}-Type
+
+  ThingGroup:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub ${Prefix}-Group
+
+  Policy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: !Sub ${Prefix}-policy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: iot:Connect
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/
+                - ${iot:Connection.Thing.ThingName}
+            Condition:
+              Bool:
+                iot:Connection.Thing.IsAttached: "true"
+          - Effect: Allow
+            Action: iot:Publish
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/
+                - ${iot:Connection.Thing.ThingName}/*
+          - Effect: Allow
+            Action: iot:Subscribe
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*/
+                - ${iot:Connection.Thing.ThingName}/*
+          - Effect: Allow
+            Action: iot:Receive
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/
+                - ${iot:Connection.Thing.ThingName}/*
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Prefix}-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSIoTThingsRegistration
+
+  ProvisioningTemplate:
+    Type: AWS::IoT::ProvisioningTemplate
+    Properties:
+      TemplateName: !Sub ${Prefix}-template
+      Enabled: true
+      ProvisioningRoleArn: !GetAtt Role.Arn
+      TemplateType: JITP
+      TemplateBody: !Sub |
+        {
+          "Parameters": {
+            "AWS::IoT::Certificate::SerialNumber": {"Type": "String"},
+            "AWS::IoT::Certificate::Id": {"Type": "String"}
+          },
+          "Resources": {
+            "thing": {
+              "Type": "AWS::IoT::Thing",
+              "Properties": {
+                "ThingName": {"Ref": "AWS::IoT::Certificate::SerialNumber"},
+                "ThingTypeName": "${ThingType}",
+                "ThingGroups": ["${ThingGroup}"]
+              }
+            },
+            "certificate": {
+              "Type": "AWS::IoT::Certificate",
+              "Properties": {
+                "CertificateId": {"Ref": "AWS::IoT::Certificate::Id"},
+                "Status": "ACTIVE"
+              }
+            },
+            "policy": {
+              "Type": "AWS::IoT::Policy",
+              "Properties": {
+                "PolicyName": "${Policy}"
+              }
+            }
+          }
+        }
