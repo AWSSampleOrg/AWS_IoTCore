@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::Serverless-2016-10-31"
+Description: AWS IoT Core Sample
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: ""
+  TokenValue:
+    Type: String
+    Default: ""
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  Authorizer:
+    Type: AWS::IoT::Authorizer
+    Properties:
+      AuthorizerFunctionArn: !GetAtt AuthorizerFunction.Arn
+      AuthorizerName: with-token-authorizer
+      EnableCachingForHttp: false
+      SigningDisabled: false
+      Status: ACTIVE
+      TokenKeyName: TokenKeyName
+      TokenSigningPublicKeys:
+        Key: !Sub ${TokenValue}
+
+  #-------------------------------------------------------
+  # CloudWatch LogGroup
+  #-------------------------------------------------------
+  AuthorizerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AuthorizerFunction}
+
+  #-------------------------------------------------------
+  #   Lambda
+  #-------------------------------------------------------
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: Lambda
+      FunctionName: AuthorizerFunction
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !Sub ${LambdaRole.Arn}
+      Runtime: python3.14
+      Timeout: 900
+      #X-Ray
+      Tracing: Active
+      Environment:
+        Variables:
+          LOG_LEVEL: DEBUG
+
+  IoTCoreLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AuthorizerFunction
+      Principal: iot.amazonaws.com
+      SourceArn: !GetAtt Authorizer.Arn
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      RoleName: !Sub ${ProjectPrefix}IoTWithTokenAuthorizerLambdaRole
