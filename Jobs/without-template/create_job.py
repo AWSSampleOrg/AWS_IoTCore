@@ -7,13 +7,12 @@ iot_client = boto3.client("iot")
 with open("job_document.json", "r") as f:
     job_doc = json.load(f)
 
+
 def main(thing_arn: str, s3_download_role_arn: str):
     response = iot_client.create_job(
-        jobId = str(uuid.uuid4()),
-        targets = [
-            thing_arn
-        ],
-        document = json.dumps(job_doc),
+        jobId=str(uuid.uuid4()),
+        targets=[thing_arn],
+        document=json.dumps(job_doc),
         # timeoutConfig={ "inProgressTimeoutInMinutes": 100 },
         # jobExecutionsRolloutConfig={
         #     "exponentialRate": {
@@ -43,17 +42,12 @@ def main(thing_arn: str, s3_download_role_arn: str):
         #         }
         #     ]
         # },
-        presignedUrlConfig={
-            'roleArn': s3_download_role_arn,
-            'expiresInSec': 3600
-        },
+        presignedUrlConfig={"roleArn": s3_download_role_arn, "expiresInSec": 3600},
     )
     print(f'Job created: {response["jobArn"]}')
+
 
 if __name__ == "__main__":
     thing_arn = ""
     s3_download_role_arn = ""
-    main(
-        thing_arn=thing_arn,
-        s3_download_role_arn=s3_download_role_arn
-    )
+    main(thing_arn=thing_arn, s3_download_role_arn=s3_download_role_arn)

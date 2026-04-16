@@ -72,7 +72,6 @@ def on_command_received(mqtt_connection: awscrt.mqtt.Connection):
         # Simulate command processing
         time.sleep(1)
 
-        # Update to SUCCEEDED
         mqtt_connection.publish(
             topic=response_topic,
             payload=json.dumps(

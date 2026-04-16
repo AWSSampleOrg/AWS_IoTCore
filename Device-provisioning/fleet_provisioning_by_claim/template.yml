@@ -96,12 +96,12 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub ${Prefix}-hook
-      Runtime: python3.12
-      Handler: index.handler
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
       Role: !GetAtt HookRole.Arn
       Code:
         ZipFile: |
-          def handler(event, context):
+          def lambda_handler(event, context):
               sn = event.get('parameters', {}).get('SerialNumber', '')
               if sn.startswith('123456'):
                   return {'allowProvisioning': True, 'parameterOverrides': {'ThingName': f"Device-{sn}"}}

@@ -80,8 +80,8 @@ Resources:
   Lambda:
     Type: AWS::Lambda::Function
     Properties:
-      Runtime: python3.12
-      Handler: index.handler
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
       Role: !GetAtt LambdaRole.Arn
       Timeout: 60
       Environment:
@@ -95,7 +95,7 @@ Resources:
           from cryptography.hazmat.backends import default_backend
           iot = boto3.client('iot')
           ddb = boto3.client('dynamodb')
-          def handler(event, context):
+          def lambda_handler(event, context):
               cert_id = event['certificateId']
               resp = iot.describe_certificate(certificateId=cert_id)
               cert = x509.load_pem_x509_certificate(resp['certificateDescription']['certificatePem'].encode(), default_backend())

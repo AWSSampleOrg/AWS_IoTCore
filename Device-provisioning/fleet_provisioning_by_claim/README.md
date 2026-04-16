@@ -1,6 +1,7 @@
 # Fleet Provisioning Setup
 
 ## 1. Deploy Stack
+
 ```bash
 ./deploy.sh
 ```
@@ -8,6 +9,7 @@
 Creates: Thing Type, Thing Group, Device Policy, Claim Policy, Provisioning Template, Lambda Hook, Claim Certificate
 
 ## 2. Get Claim Certificate
+
 ```bash
 # Get outputs from stack
 aws cloudformation describe-stacks \
@@ -28,10 +30,15 @@ aws iot attach-policy \
 ```
 
 ## 3. Run Client
+
+Get serial number from certificate. This step is needed due to its logic, not because of Fleet Provisioning
+
+```sh
+SERIAL_NUMBER=$(openssl x509 -in certificates/claim.cert.pem -noout -serial | cut -d '=' -f 2)
+```
+
 ```bash
-cd iotdevice
-# Edit client.py with endpoint and template name from outputs
-python client.py
+python client.py ${SERIAL_NUMBER}
 ```
 
 Device provisions automatically with permanent certificate

@@ -1,3 +1,4 @@
+import sys
 import time
 from awsiot import iotidentity
 from awscrt import mqtt
@@ -22,9 +23,8 @@ def on_thing_registered(response: iotidentity.RegisterThingResponse) -> None:
     print(f"Thing registered: {response.thing_name}")
 
 
-def main() -> None:
-    # Configuration
-    mqtt3.CLIENT_ID = "claim-device"
+def main(device_serial_number) -> None:
+    mqtt3.CLIENT_ID = device_serial_number
     mqtt3.PATH_TO_CERT = "certificates/claim.cert.pem"
     mqtt3.PATH_TO_KEY = "certificates/claim.private.key"
     mqtt3.PATH_TO_ROOT = "certificates/AmazonRootCA1.pem"
@@ -72,4 +72,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    argv = sys.argv
+    if len(argv) != 2:
+        print("python client.py <certificates/claim.cert.pem serial number>")
+    else:
+        main(argv[1])

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import boto3
 import json
 import time
@@ -6,7 +5,6 @@ import time
 # Configuration
 THING_NAME = "Thing1"
 
-# Get IoT endpoint
 iot_jobs = boto3.client("iot-jobs-data")
 
 # Get pending jobs
@@ -32,10 +30,8 @@ for job in jobs.get("queuedJobs", []):
     )
     print("Status: IN_PROGRESS")
 
-    # Simulate work
     time.sleep(2)
 
-    # Update to SUCCEEDED
     iot_jobs.update_job_execution(
         jobId=job_id, thingName=THING_NAME, status="SUCCEEDED"
     )

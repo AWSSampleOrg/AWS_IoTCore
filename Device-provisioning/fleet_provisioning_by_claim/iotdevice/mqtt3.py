@@ -1,1 +1,0 @@
-../../../aws-iot-device-sdk-python-v2/mqtt3.py

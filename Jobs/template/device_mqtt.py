@@ -55,7 +55,6 @@ def on_job_received(mqtt_connection: mqtt.Connection):
         )
         logger.info("Status: IN_PROGRESS")
 
-        # Update to SUCCEEDED
         mqtt_connection.publish(
             topic=update_topic,
             payload=json.dumps({"status": "SUCCEEDED"}),

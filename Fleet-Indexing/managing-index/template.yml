@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "AWS IoT Fleet Indexing - Thing and Thing Group Indexing Combined"
+
+Resources:
+  # IoT Thing Type (from thing-indexing doc)
+  MyThingType:
+    Type: AWS::IoT::ThingType
+    Properties:
+      ThingTypeName: !Sub "${AWS::StackName}-MyThingType"
+      ThingTypeProperties:
+        ThingTypeDescription: Example thing type from AWS documentation
+
+  # Thing Groups (from thing-indexing doc)
+  MyGroup1:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub "${AWS::StackName}-mygroup1"
+      ThingGroupProperties:
+        ThingGroupDescription: Example thing group 1
+
+  MyGroup2:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub "${AWS::StackName}-mygroup2"
+      ThingGroupProperties:
+        ThingGroupDescription: Example thing group 2
+
+  # Thing Groups (from thing-group-indexing doc)
+  MyThingGroup1:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub "${AWS::StackName}-mythinggroup1"
+      ThingGroupProperties:
+        ThingGroupDescription: Example thing group for indexing
+
+  MyThingGroup2:
+    Type: AWS::IoT::ThingGroup
+    Properties:
+      ThingGroupName: !Sub "${AWS::StackName}-mythinggroup2"
+      ThingGroupProperties:
+        ThingGroupDescription: Another example thing group
+
+  # IoT Things (from thing-indexing doc)
+  MyThing1:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Sub "${AWS::StackName}-mything1"
+      AttributePayload:
+        Attributes:
+          attribute1: "abc"
+
+  MyThing2:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Sub "${AWS::StackName}-mything2"
+      AttributePayload:
+        Attributes:
+          model: "1.2"
+          country: "usa"
