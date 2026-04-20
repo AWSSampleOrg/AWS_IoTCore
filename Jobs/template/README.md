@@ -7,6 +7,7 @@ Check `Security/Authentication/Client-authentication/X.509/`
 # Create a thing.
 
 ```sh
+cd ../
 ./deploy.sh
 ```
 
@@ -45,7 +46,5 @@ python create.py
 # Get the created job.
 
 ```sh
-python device_mqtt.py
-or
-python device_api.py
+cd ../devices-and-jobs
 ```

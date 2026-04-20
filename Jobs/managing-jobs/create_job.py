@@ -4,15 +4,18 @@ import uuid
 
 iot_client = boto3.client("iot")
 
-with open("job_document.json", "r") as f:
-    job_doc = json.load(f)
-
 
 def main(thing_arn: str, s3_download_role_arn: str):
     response = iot_client.create_job(
         jobId=str(uuid.uuid4()),
         targets=[thing_arn],
-        document=json.dumps(job_doc),
+        document=json.dumps(
+            {
+                "operation": "update",
+                "version": "2.0.1",
+                "file": "${aws:iot:s3-presigned-url-v2:https://<bucket>.s3.<region>.amazonaws.com/AWSIoT/Jobs/test.txt}",
+            }
+        ),
         # timeoutConfig={ "inProgressTimeoutInMinutes": 100 },
         # jobExecutionsRolloutConfig={
         #     "exponentialRate": {

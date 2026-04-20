@@ -3,20 +3,19 @@
 SOURCE_DIR=$(cd $(dirname ${BASH_SOURCE:-$0}) && pwd)
 cd ${SOURCE_DIR}
 
-S3_BUCKET=''
-
-STACK_NAME="IoT-Core-Job-Template"
+STACK_NAME="IoT-Core-Job"
 CERTIFICATE_ARN=''
 
-aws cloudformation package \
-    --template-file template.yml \
-    --s3-bucket ${S3_BUCKET} \
-    --output-template-file packaged_template.yml
-
 aws cloudformation deploy \
-    --template-file packaged_template.yml \
+    --template-file template.yml \
     --stack-name ${STACK_NAME} \
     --parameter-overrides \
     ProjectPrefix="" \
     CertificateArn="${CERTIFICATE_ARN}" \
     --capabilities CAPABILITY_NAMED_IAM
+
+if [ $? -eq 0 ] ; then
+    aws cloudformation describe-stacks \
+        --stack-name ${STACK_NAME} \
+        --query 'Stacks[0].Outputs'
+fi

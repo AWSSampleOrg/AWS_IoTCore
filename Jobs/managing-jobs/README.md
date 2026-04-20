@@ -7,6 +7,7 @@ Check `Security/Authentication/Client-authentication/X.509/`
 # Create a thing.
 
 ```sh
+cd ../
 ./deploy.sh
 ```
 
@@ -20,7 +21,7 @@ aws s3 cp test.txt s3://<bucket>/AWSIoT/Jobs/test.txt
 
 # Create an AWS IoT Job
 
-1. Replace `region` and `bucket` in `job_document.json` with your own.
+1. Replace `region` and `bucket` in `create_job.py` with your own.
 
 `/AWSIoT/Jobs/test.txt` is just an example, so you can change it to anything else.
 
@@ -45,7 +46,5 @@ python create_job.py
 # Get the created job.
 
 ```sh
-python device_mqtt.py
-or
-python device_api.py
+cd ../devices-and-jobs
 ```

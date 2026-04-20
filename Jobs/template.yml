@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Transform: "AWS::Serverless-2016-10-31"
 Description: AWS IoT Core Sample
 Parameters:
   ProjectPrefix:
@@ -13,10 +12,10 @@ Resources:
   #-------------------------------------------------------
   #   IoT Core
   #-------------------------------------------------------
-  Thing1:
+  IoTCoreJobThing:
     Type: AWS::IoT::Thing
     Properties:
-      ThingName: !Sub ${ProjectPrefix}Thing1
+      ThingName: !Sub ${ProjectPrefix}IoTCoreJobThing
 
   Policy:
     Type: AWS::IoT::Policy
@@ -44,7 +43,7 @@ Resources:
               - iot:Receive
             Resource:
               - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*
-      PolicyName: !Sub ${ProjectPrefix}Policy
+      PolicyName: !Sub ${ProjectPrefix}IoTCoreJobPolicy
 
   PolicyPrincipalAttachment:
     Type: AWS::IoT::PolicyPrincipalAttachment
@@ -56,4 +55,30 @@ Resources:
     Type: AWS::IoT::ThingPrincipalAttachment
     Properties:
       Principal: !Sub ${CertificateArn}
-      ThingName: !Ref Thing1
+      ThingName: !Ref IoTCoreJobThing
+
+  S3DownloadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: "*"
+
+Outputs:
+  IoTCoreJobThing:
+    Value: !GetAtt IoTCoreJobThing.Arn
+
+  S3DownloadRole:
+    Value: !GetAtt S3DownloadRole.Arn
