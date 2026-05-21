@@ -4,7 +4,6 @@ import os
 import json
 import sys
 import time
-import threading
 
 import awscrt
 from awsiot import mqtt_connection_builder
@@ -17,8 +16,6 @@ handler.setLevel(DEBUG)
 logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
 logger.addHandler(handler)
 logger.propagate = False
-
-received_all_event = threading.Event()
 
 # Define ENDPOINT, CLIENT_ID, PATH_TO_CERT, PATH_TO_KEY, PATH_TO_ROOT, MESSAGE, TOPIC, and RANGE
 iot_client = boto3.client("iot")
@@ -85,7 +82,12 @@ def on_message_received(
             "retain": retain,
         }
     )
-    received_all_event.set()
+    decoded_payload = payload.decode()
+    try:
+        json_decoded = json.loads(decoded_payload)
+        logger.debug(json.dumps(json_decoded, indent=4))
+    except Exception:
+        logger.debug(decoded_payload)
 
 
 # Callback when the connection successfully connects
@@ -107,20 +109,25 @@ def on_connection_closed(connection: awscrt.mqtt.Connection, callback_data):
     logger.debug("Connection closed")
 
 
-def get_connection():
+def get_connection(
+    cert_filepath=PATH_TO_CERT,
+    pri_key_filepath=PATH_TO_KEY,
+    ca_filepath=PATH_TO_ROOT,
+    client_id=CLIENT_ID,
+):
     # Spin up resources
     event_loop_group = awscrt.io.EventLoopGroup(1)
     host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
     client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
         endpoint=ENDPOINT,
-        cert_filepath=PATH_TO_CERT,
-        pri_key_filepath=PATH_TO_KEY,
+        cert_filepath=cert_filepath,
+        pri_key_filepath=pri_key_filepath,
         client_bootstrap=client_bootstrap,
-        ca_filepath=PATH_TO_ROOT,
+        ca_filepath=ca_filepath,
         on_connection_interrupted=on_connection_interrupted,
         on_connection_resumed=on_connection_resumed,
-        client_id=CLIENT_ID,
+        client_id=client_id,
         # Persistent session
         # https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-persistent-sessions
         clean_session=False,
@@ -157,13 +164,6 @@ def main():
         topic=TOPIC, payload=data, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
     )
     time.sleep(1)
-
-    # Wait for all messages to be received.
-    # This waits forever if count was set to 0.
-    if received_all_event.is_set():
-        logger.debug("Waiting for all messages to be received...")
-
-    received_all_event.wait()
 
     disconnect_future = mqtt_connection.disconnect()
     disconnect_future.result()
