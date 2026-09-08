@@ -6,6 +6,7 @@ import sys
 import time
 
 import awscrt
+from awscrt.exceptions import AwsCrtError
 from awsiot import mqtt_connection_builder
 import boto3
 
@@ -35,8 +36,12 @@ TOPIC = "test/iot"
 
 
 # Callback when connection is accidentally lost.
-def on_connection_interrupted(connection: awscrt.mqtt.Connection, error, **kwargs):
-    logger.debug(f"Connection interrupted. error: {error}")
+def on_connection_interrupted(
+    connection: awscrt.mqtt.Connection, error: AwsCrtError, **kwargs
+):
+    logger.debug(
+        f"on_connection_interrupted: code={error.code} name={error.name} message={error.message}"
+    )
 
 
 # Callback when an interrupted connection is re-established.
@@ -47,7 +52,7 @@ def on_connection_resumed(
     **kwargs,
 ):
     logger.debug(
-        f"Connection resumed. return_code: {return_code} session_present: {session_present}"
+        f"on_connection_resumed: return_code: {return_code} session_present: {session_present}"
     )
 
     if return_code == awscrt.mqtt.ConnectReturnCode.ACCEPTED and not session_present:
@@ -61,7 +66,7 @@ def on_connection_resumed(
 
 def on_resubscribe_complete(resubscribe_future):
     resubscribe_results = resubscribe_future.result()
-    logger.debug(f"Resubscribe results: {resubscribe_results}")
+    logger.debug(f"on_resubscribe_complete: {resubscribe_results}")
 
     for topic, qos in resubscribe_results["topics"]:
         if qos is None:
@@ -76,7 +81,6 @@ def on_message_received(
     logger.debug(
         {
             "topic": topic,
-            "payload": payload.decode(),
             "dup": dup,
             "qos": qos.value,
             "retain": retain,
@@ -94,19 +98,19 @@ def on_message_received(
 def on_connection_success(connection: awscrt.mqtt.Connection, callback_data):
     assert isinstance(callback_data, awscrt.mqtt.OnConnectionSuccessData)
     logger.debug(
-        f"Connection Successful with return code: {callback_data.return_code} session present: {callback_data.session_present}"
+        f"on_connection_success: {callback_data.return_code} session present: {callback_data.session_present}"
     )
 
 
 # Callback when a connection attempt fails
 def on_connection_failure(connection: awscrt.mqtt.Connection, callback_data):
     assert isinstance(callback_data, awscrt.mqtt.OnConnectionFailureData)
-    logger.debug(f"Connection failed with error code: {callback_data.error}")
+    logger.debug(f"on_connection_failure: {callback_data.error}")
 
 
 # Callback when a connection has been disconnected or shutdown successfully
 def on_connection_closed(connection: awscrt.mqtt.Connection, callback_data):
-    logger.debug("Connection closed")
+    logger.debug("on_connection_closed")
 
 
 def get_connection(
@@ -137,7 +141,7 @@ def get_connection(
         on_connection_closed=on_connection_closed,
     )
 
-    logger.debug("Connecting to %s with client ID '%s'...", ENDPOINT, CLIENT_ID)
+    logger.debug("Connecting to %s with client ID '%s'...", ENDPOINT, client_id)
     # Make the connect() call
     connect_future = mqtt_connection.connect()
     # Future.result() waits until a result is available
@@ -155,7 +159,7 @@ def main():
     )
     subscribe_result = subscribe_future.result()
     logger.debug(
-        f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
+        f"Subscribed {str(subscribe_result['topic'])} with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
     )
 
     data = json.dumps({"index": 0})

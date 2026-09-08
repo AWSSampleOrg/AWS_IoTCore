@@ -19,7 +19,7 @@ logger.propagate = False
 
 def main():
     mqtt_connection = mqtt3.get_connection(
-        client_id="subscriber",
+        client_id="Thing1",
         cert_filepath=os.path.join(
             os.path.dirname(__file__),
             "certificates/device_cert_filename.pem",
@@ -33,7 +33,7 @@ def main():
         ),
     )
 
-    thing_name = "publisher"
+    thing_name = "Thing1"
     shadow_name = "shadow"
 
     for topic in [
@@ -56,7 +56,7 @@ def main():
         )
         subscribe_result = subscribe_future.result()
         logger.debug(
-            f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
+            f"Subscribed {str(subscribe_result['topic'])} with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
         )
 
     logger.debug("Press Ctrl+C to disconnect...")

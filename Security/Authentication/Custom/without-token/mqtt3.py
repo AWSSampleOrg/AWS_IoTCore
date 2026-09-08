@@ -138,7 +138,7 @@ def main():
     )
     subscribe_result = subscribe_future.result()
     logger.debug(
-        f"Subscribed with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
+        f"Subscribed {str(subscribe_result['topic'])} with qos: {str(subscribe_result['qos'])}, packet_id: {packet_id}"
     )
 
     data = json.dumps({"index": 0})

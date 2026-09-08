@@ -19,7 +19,7 @@ logger.propagate = False
 
 def main():
     mqtt_connection = mqtt3.get_connection(
-        client_id="subscriber",
+        client_id="publisher",
         cert_filepath=os.path.join(
             os.path.dirname(__file__),
             "certificates/device_cert_filename.pem",
@@ -35,7 +35,7 @@ def main():
 
     data = json.dumps({"state": {"desired": {"percentage": 0.8}}})
     logger.debug(data)
-    thing_name = "publisher"
+    thing_name = "Thing1"
     shadow_name = "shadow"
 
     mqtt_connection.publish(
