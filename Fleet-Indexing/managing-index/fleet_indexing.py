@@ -18,26 +18,24 @@ def update_fleet_indexing():
         print(f"Assigning thing type {THING_TYPE_NAME} to {THING2_NAME}...")
         iot.update_thing(thingName=THING2_NAME, thingTypeName=THING_TYPE_NAME)
 
-        config = {
-            "thingIndexingMode": "REGISTRY_AND_SHADOW",
-            "thingConnectivityIndexingMode": "STATUS",
-            "namedShadowIndexingMode": "ON",
-            "filter": {"namedShadowNames": ["thing1shadow"]},
-            "customFields": [
-                {"name": "attributes.model", "type": "String"},
-                {"name": "attributes.country", "type": "String"},
-                {"name": "shadow.reported.location", "type": "String"},
-                {"name": "shadow.reported.stats.battery", "type": "Number"},
-                {
-                    "name": "shadow.name.thing1shadow.desired.DefaultDesired",
-                    "type": "String",
-                },
-            ],
-        }
-
         print("Enabling fleet indexing...")
         iot.update_indexing_configuration(
-            thingIndexingConfiguration=config,
+            thingIndexingConfiguration={
+                "thingIndexingMode": "REGISTRY_AND_SHADOW",
+                "thingConnectivityIndexingMode": "STATUS",
+                "namedShadowIndexingMode": "ON",
+                "filter": {"namedShadowNames": ["thing1shadow"]},
+                "customFields": [
+                    {"name": "attributes.model", "type": "String"},
+                    {"name": "attributes.country", "type": "String"},
+                    {"name": "shadow.reported.location", "type": "String"},
+                    {"name": "shadow.reported.stats.battery", "type": "Number"},
+                    {
+                        "name": "shadow.name.thing1shadow.desired.DefaultDesired",
+                        "type": "String",
+                    },
+                ],
+            },
             thingGroupIndexingConfiguration={"thingGroupIndexingMode": "ON"},
         )
 

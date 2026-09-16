@@ -26,5 +26,5 @@ aws iot update-indexing-configuration \
 sleep 20
 
 aws iot create-dynamic-thing-group \
-    --thing-group-name LessThan50PercentInBattery \
+    --thing-group-name LessThan50Wattage \
     --query-string "attributes.wattage < 50"

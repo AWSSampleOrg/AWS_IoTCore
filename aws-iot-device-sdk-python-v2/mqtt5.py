@@ -1,43 +1,30 @@
 # -*- encoding:utf-8 -*-
-from logging import getLogger, StreamHandler, DEBUG
+import logging
 import os
 import json
 import time
-import threading
 from awsiot import mqtt5_client_builder
 
 from awscrt import mqtt5
 import boto3
 
 # logger setting
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", logging.DEBUG))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)s] %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+)
 logger.addHandler(handler)
 logger.propagate = False
 
 
 iot_client = boto3.client("iot")
 ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
-CLIENT_ID = "Thing1"
-PATH_TO_CERT = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_filename.pem",
-)
-PATH_TO_KEY = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_key_filename.key",
-)
-PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
-TOPIC = "test/iot"
-
-# --------------------------------- ARGUMENT PARSING END -----------------------------------------
-TIMEOUT = 100
-# Events used within callbacks to progress sample
-connection_success_event = threading.Event()
-stopped_event = threading.Event()
-received_all_event = threading.Event()
 
 
 # Callback when any publish is received
@@ -53,16 +40,13 @@ def on_publish_received(publish_packet_data: mqtt5.PublishReceivedData):
 # Callback for the lifecycle event Stopped
 def on_lifecycle_stopped(lifecycle_stopped_data: mqtt5.LifecycleStoppedData):
     logger.debug("Lifecycle Stopped\n")
-    stopped_event.set()
 
 
 # Callback for lifecycle event Attempting Connect
 def on_lifecycle_attempting_connect(
     lifecycle_attempting_connect_data: mqtt5.LifecycleAttemptingConnectData,
 ):
-    logger.debug(
-        f"Lifecycle Connection Attempt\nConnecting to endpoint: '{ENDPOINT}' with client ID'{CLIENT_ID}'"
-    )
+    logger.debug(lifecycle_attempting_connect_data)
 
 
 # Callback for the lifecycle event Connection Success
@@ -77,7 +61,6 @@ def on_lifecycle_connection_success(
     )
     logger.debug("Session Present: {}\n".format(connack_packet.session_present))
     logger.debug(connack_packet)
-    connection_success_event.set()
 
 
 # Callback for the lifecycle event Connection Failure
@@ -104,11 +87,22 @@ def on_lifecycle_disconnection(
     )
 
 
-def get_connection():
+def get_connection(
+    endpoint=ENDPOINT,
+    cert_filePath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_filename.pem",
+    ),
+    pri_key_filepath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_key_filename.key",
+    ),
+    connect_options: mqtt5.ConnectPacket = None,
+):
     mqtt_connection = mqtt5_client_builder.mtls_from_path(
-        endpoint=ENDPOINT,
-        cert_filepath=PATH_TO_CERT,
-        pri_key_filepath=PATH_TO_KEY,
+        endpoint=endpoint,
+        cert_filepath=cert_filePath,
+        pri_key_filepath=pri_key_filepath,
         on_publish_received=on_publish_received,
         on_lifecycle_stopped=on_lifecycle_stopped,
         on_lifecycle_attempting_connect=on_lifecycle_attempting_connect,
@@ -118,27 +112,25 @@ def get_connection():
         # Persistent session
         # https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html#mqtt-persistent-sessions
         # session_behavior=mqtt5.ClientSessionBehaviorType.REJOIN_ALWAYS,
-        # connect_options=mqtt5.ConnectPacket(
-        #     client_id=CLIENT_ID, session_expiry_interval_sec=3600
-        # ),
+        connect_options=connect_options,
     )
     mqtt_connection.start()
-    if not connection_success_event.wait(TIMEOUT):
-        raise TimeoutError("Connection timeout")
-
     return mqtt_connection
 
 
 def main():
     mqtt_connection = get_connection()
+
+    topic = "test/iot"
+
     subscribe_future = mqtt_connection.subscribe(
         subscribe_packet=mqtt5.SubscribePacket(
             subscriptions=[
-                mqtt5.Subscription(topic_filter=TOPIC, qos=mqtt5.QoS.AT_LEAST_ONCE)
+                mqtt5.Subscription(topic_filter=topic, qos=mqtt5.QoS.AT_LEAST_ONCE)
             ]
         )
     )
-    suback = subscribe_future.result(TIMEOUT)
+    suback = subscribe_future.result(3)
     logger.debug(
         f"Subscribed: {suback.reason_string}, user_properties: {suback.user_properties}, reason_codes: {suback.reason_codes}"
     )
@@ -147,13 +139,11 @@ def main():
     logger.debug(data)
     mqtt_connection.publish(
         publish_packet=mqtt5.PublishPacket(
-            topic=TOPIC, payload=data, qos=mqtt5.QoS.AT_LEAST_ONCE
+            topic=topic, payload=data, qos=mqtt5.QoS.AT_LEAST_ONCE
         )
     )
-    time.sleep(1)
 
     mqtt_connection.stop()
-    stopped_event.wait(TIMEOUT)
 
 
 if __name__ == "__main__":

@@ -7,5 +7,5 @@
 ```
 
 ```sh
-python mqtt3.py
+python client.py
 ```

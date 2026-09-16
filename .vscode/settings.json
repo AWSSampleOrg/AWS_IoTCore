@@ -11,9 +11,8 @@
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "eslint.lintTask.enable": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
   "npm.packageManager": "pnpm",
-  "[typescript][javascript][typescriptreact][javascriptreact][json][jsonc][jsonl][yaml][markdown][html]": {
+  "[typescript][javascript][typescriptreact][javascriptreact][json][jsonc][jsonl][yaml][html]": {
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit"
     },

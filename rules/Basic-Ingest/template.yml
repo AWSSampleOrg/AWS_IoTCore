@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  TopicRuleForBasicIngest:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: TopicRuleForBasicIngest
+      TopicRulePayload:
+        Actions:
+          - Republish:
+              RoleArn: !GetAtt IoTRepublishRoleForBasicIngest.Arn
+              Topic: test/basic-ingest/received
+              Qos: 1
+        AwsIotSqlVersion: "2016-03-23"
+        RuleDisabled: false
+        Sql: SELECT *, topic() as topic, clientid() AS clientId FROM 'test/basic-ingest'
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#
+  IoTRepublishRoleForBasicIngest:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: IoTRepublishPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: iot:Publish
+                Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/test/basic-ingest/received
+      RoleName: IoTRepublishRoleForBasicIngest

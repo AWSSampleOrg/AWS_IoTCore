@@ -5,6 +5,7 @@ Uses iotjobs.IotJobsClient instead of raw MQTT topics.
 Equivalent to workflow_2_select_from_available.py.
 """
 
+import os
 import time
 import uuid
 from awscrt import mqtt
@@ -87,7 +88,20 @@ def execute_job(
 
 
 def main():
-    conn = mqtt3.get_connection()
+    conn = mqtt3.mtls_from_path(
+        cert_filepath=os.path.join(
+            os.path.dirname(__file__),
+            "certificates/device_cert_filename.pem",
+        ),
+        pri_key_filepath=os.path.join(
+            os.path.dirname(__file__),
+            "certificates/device_cert_key_filename.key",
+        ),
+        ca_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
+        ),
+        client_id="Thing1",
+    )
     jobs_client = iotjobs.IotJobsClient(conn)
 
     # Step 1: Subscribe to notify and all response topics

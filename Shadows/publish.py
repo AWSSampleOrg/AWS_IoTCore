@@ -1,7 +1,7 @@
 import mqtt3
 
 # -*- encoding:utf-8 -*-
-from logging import getLogger, StreamHandler, DEBUG
+import logging
 import os
 import json
 import time
@@ -9,16 +9,22 @@ import time
 import awscrt
 
 # logger setting
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", logging.DEBUG))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)s] %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+)
 logger.addHandler(handler)
 logger.propagate = False
 
 
 def main():
-    mqtt_connection = mqtt3.get_connection(
+    mqtt_connection = mqtt3.mtls_from_path(
         client_id="publisher",
         cert_filepath=os.path.join(
             os.path.dirname(__file__),

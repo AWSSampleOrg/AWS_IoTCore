@@ -13,7 +13,7 @@ Call UpdateJobExecution(SUCCEEDED/FAILED) when done
   notify fires when a new pending job becomes available → loop back to step 2
 """
 
-from logging import getLogger, StreamHandler, DEBUG
+import logging
 import os
 import json
 import time
@@ -21,10 +21,16 @@ import uuid
 import awscrt
 import mqtt3
 
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", logging.DEBUG))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)s] %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+)
 logger.addHandler(handler)
 logger.propagate = False
 
@@ -171,17 +177,18 @@ def on_notify(conn: awscrt.mqtt.Connection):
 
 
 def main():
-    mqtt3.PATH_TO_CERT = os.path.join(
-        os.path.dirname(__file__), "certificates/device_cert_filename.pem"
+    conn = mqtt3.mtls_from_path(
+        client_id="Thing1",
+        cert_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/device_cert_filename.pem"
+        ),
+        pri_key_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/device_cert_key_filename.key"
+        ),
+        ca_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
+        ),
     )
-    mqtt3.PATH_TO_KEY = os.path.join(
-        os.path.dirname(__file__), "certificates/device_cert_key_filename.key"
-    )
-    mqtt3.PATH_TO_ROOT = os.path.join(
-        os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
-    )
-
-    conn = mqtt3.get_connection()
 
     # Step 1: Subscribe to notify and all response topics
     for topic, cb in [
