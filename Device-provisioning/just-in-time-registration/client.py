@@ -6,11 +6,24 @@ import mqtt3
 import awscrt
 
 
-def get_mqtt_connection():
+def get_mqtt_connection(device_serial_number: str):
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            return mqtt3.get_connection()
+            return mqtt3.get_connection(
+                client_id=device_serial_number,
+                cert_filepath=os.path.join(
+                    os.path.dirname(__file__),
+                    "certificates/ca_and_device_certificate.pem",
+                ),
+                pri_key_filepath=os.path.join(
+                    os.path.dirname(__file__),
+                    "certificates/device_cert_key_filename.key",
+                ),
+                ca_filepath=os.path.join(
+                    os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
+                ),
+            )
         except Exception as e:
             print(f"Connection failed: {e}")
             if attempt < max_retries - 1:
@@ -21,20 +34,7 @@ def get_mqtt_connection():
 
 
 def main(device_serial_number) -> None:
-    mqtt3.CLIENT_ID = device_serial_number
-    mqtt3.PATH_TO_CERT = os.path.join(
-        os.path.dirname(__file__),
-        "certificates/ca_and_device_certificate.pem",
-    )
-    mqtt3.PATH_TO_KEY = os.path.join(
-        os.path.dirname(__file__),
-        "certificates/device_cert_key_filename.key",
-    )
-    mqtt3.PATH_TO_ROOT = os.path.join(
-        os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
-    )
-
-    conn = get_mqtt_connection()
+    conn = get_mqtt_connection(device_serial_number)
     topic = f"device/{mqtt3.CLIENT_ID}/data"
 
     conn.subscribe(

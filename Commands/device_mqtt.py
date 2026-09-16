@@ -8,7 +8,6 @@ import awscrt
 
 # Command topics (wildcard for any execution ID)
 THING_NAME = "Thing1"
-COMMAND_REQUEST_TOPIC = f"$aws/commands/things/{THING_NAME}/executions/+/request/json"
 
 # logger setting
 logger = getLogger(__name__)
@@ -95,18 +94,15 @@ def on_command_received(mqtt_connection: awscrt.mqtt.Connection):
 
 
 def main():
-    # Configuration
-    mqtt3.CLIENT_ID = "claim-device"
-    mqtt3.PATH_TO_CERT = "certificates/claim.cert.pem"
-    mqtt3.PATH_TO_KEY = "certificates/claim.private.key"
-    mqtt3.PATH_TO_ROOT = "certificates/AmazonRootCA1.pem"
-
-    mqtt_connection = mqtt3.get_connection()
-
-    logger.debug(f"Subscribing to topic '{COMMAND_REQUEST_TOPIC}'...")
+    mqtt_connection = mqtt3.get_connection(
+        client_id="claim-device",
+        cert_filepath="certificates/claim.cert.pem",
+        pri_key_filepath="certificates/claim.private.key",
+        ca_filepath="certificates/AmazonRootCA1.pem",
+    )
 
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=COMMAND_REQUEST_TOPIC,
+        topic=f"$aws/commands/things/{THING_NAME}/executions/+/request/json",
         qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
         callback=on_command_received(mqtt_connection),
     )

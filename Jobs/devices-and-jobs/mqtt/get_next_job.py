@@ -130,17 +130,18 @@ def on_notify_next(conn: awscrt.mqtt.Connection):
 
 
 def main():
-    mqtt3.PATH_TO_CERT = os.path.join(
-        os.path.dirname(__file__), "certificates/device_cert_filename.pem"
+    conn = mqtt3.get_connection(
+        client_id="Thing1",
+        cert_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/device_cert_filename.pem"
+        ),
+        pri_key_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/device_cert_key_filename.key"
+        ),
+        ca_filepath=os.path.join(
+            os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
+        ),
     )
-    mqtt3.PATH_TO_KEY = os.path.join(
-        os.path.dirname(__file__), "certificates/device_cert_key_filename.key"
-    )
-    mqtt3.PATH_TO_ROOT = os.path.join(
-        os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
-    )
-
-    conn = mqtt3.get_connection()
 
     # Step 1: Subscribe to notify-next and all response topics
     for topic, cb in [

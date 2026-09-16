@@ -2,48 +2,50 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Fleet Provisioning - Complete Setup
 
 Parameters:
-  Prefix:
+  ProjectPrefix:
     Type: String
     Default: fleet
 
 Resources:
-  ThingType:
-    Type: AWS::IoT::ThingType
-    Properties:
-      ThingTypeName: !Sub ${Prefix}-Type
-
-  ThingGroup:
-    Type: AWS::IoT::ThingGroup
-    Properties:
-      ThingGroupName: !Sub ${Prefix}-Group
-
   DevicePolicy:
     Type: AWS::IoT::Policy
     Properties:
-      PolicyName: !Sub ${Prefix}-device-policy
+      PolicyName: !Sub ${ProjectPrefix}-device-policy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action: iot:Connect
-            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/$${iot:Connection.Thing.ThingName}
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:client/
+                - $${iot:Connection.Thing.ThingName}
             Condition:
               Bool:
                 iot:Connection.Thing.IsAttached: "true"
           - Effect: Allow
             Action: iot:Publish
-            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/$${iot:Connection.Thing.ThingName}/*
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/
+                - $${iot:Connection.Thing.ThingName}/*
           - Effect: Allow
             Action: iot:Subscribe
-            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*/$${iot:Connection.Thing.ThingName}/*
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/*/
+                - $${iot:Connection.Thing.ThingName}/*
           - Effect: Allow
             Action: iot:Receive
-            Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/$${iot:Connection.Thing.ThingName}/*
+            Resource: !Join
+              - ""
+              - - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/*/
+                - $${iot:Connection.Thing.ThingName}/*
 
   ClaimPolicy:
     Type: AWS::IoT::Policy
     Properties:
-      PolicyName: !Sub ${Prefix}-claim-policy
+      PolicyName: !Sub ${ProjectPrefix}-claim-policy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -54,17 +56,17 @@ Resources:
             Action: iot:Publish
             Resource:
               - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/certificates/create/*
-              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/provisioning-templates/${Prefix}-template/provision/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/provisioning-templates/fleet-provisioning-template/provision/*
           - Effect: Allow
             Action: iot:Subscribe
             Resource:
               - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/certificates/create/*
-              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/provisioning-templates/${Prefix}-template/provision/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/provisioning-templates/fleet-provisioning-template/provision/*
           - Effect: Allow
             Action: iot:Receive
             Resource:
               - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/certificates/create/*
-              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/provisioning-templates/${Prefix}-template/provision/*
+              - !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/provisioning-templates/fleet-provisioning-template/provision/*
 
   Role:
     Type: AWS::IAM::Role
@@ -95,15 +97,16 @@ Resources:
   Hook:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub ${Prefix}-hook
-      Runtime: python3.14
-      Handler: lambda_function.lambda_handler
+      FunctionName: !Sub ${ProjectPrefix}-hook
+      Runtime: python3.15
+      Handler: index.lambda_handler
       Role: !GetAtt HookRole.Arn
       Code:
         ZipFile: |
           def lambda_handler(event, context):
+              print(event)
               sn = event.get('parameters', {}).get('SerialNumber', '')
-              if sn.startswith('123456'):
+              if sn:
                   return {'allowProvisioning': True, 'parameterOverrides': {'ThingName': f"Device-{sn}"}}
               return {'allowProvisioning': False}
 
@@ -121,7 +124,7 @@ Resources:
       ProvisioningRoleArn: !GetAtt Role.Arn
       PreProvisioningHook:
         TargetArn: !GetAtt Hook.Arn
-      TemplateName: !Sub ${Prefix}-template
+      TemplateName: fleet-provisioning-template
       TemplateType: FLEET_PROVISIONING
       TemplateBody: !Sub |
         {
@@ -132,9 +135,7 @@ Resources:
             "thing": {
               "Type": "AWS::IoT::Thing",
               "Properties": {
-                "ThingName": {"Ref": "SerialNumber"},
-                "ThingTypeName": "${ThingType}",
-                "ThingGroups": ["${ThingGroup}"]
+                "ThingName": {"Ref": "SerialNumber"}
               }
             },
             "certificate": {
@@ -152,24 +153,3 @@ Resources:
             }
           }
         }
-
-  ClaimCert:
-    Type: AWS::IoT::Certificate
-    Properties:
-      Status: ACTIVE
-
-  ClaimPolicyAttachment:
-    Type: AWS::IoT::PolicyPrincipalAttachment
-    Properties:
-      PolicyName: !Ref ClaimPolicy
-      Principal: !GetAtt ClaimCert.Arn
-
-Outputs:
-  TemplateName:
-    Value: !Ref ProvisioningTemplate
-  ClaimCertId:
-    Value: !Ref ClaimCert
-  ClaimCertPem:
-    Value: !GetAtt ClaimCert.CertificatePem
-  Endpoint:
-    Value: !Sub ${AWS::AccountId}.iot.${AWS::Region}.amazonaws.com

@@ -1,70 +1,101 @@
+import json
+import os
 import sys
 import time
-from awsiot import iotidentity
-from awscrt import mqtt
+import awscrt
 import mqtt3
 
-cert_ownership_token: str = ""
-cert_id: str = ""
-cert_pem: str = ""
+certificate_ownership_token: str = ""
+certificate_id: str = ""
+certificate_pem: str = ""
 private_key: str = ""
 
 
-def on_cert_created(response: iotidentity.CreateKeysAndCertificateResponse) -> None:
-    global cert_ownership_token, cert_id, cert_pem, private_key
-    cert_ownership_token = response.certificate_ownership_token
-    cert_id = response.certificate_id
-    cert_pem = response.certificate_pem
-    private_key = response.private_key
-    print("Certificate created")
+def on_cert_created(
+    topic: str, payload: bytes, dup: bool, qos: awscrt.mqtt.QoS, retain: bool, **kwargs
+) -> None:
+    mqtt3.on_message_received(topic, payload, dup, qos, retain, **kwargs)
 
+    global certificate_ownership_token, certificate_id, certificate_pem, private_key
+    body = json.loads(payload.decode())
+    certificate_ownership_token = body["certificateOwnershipToken"]
+    certificate_id = body["certificateId"]
+    certificate_pem = body["certificatePem"]
+    private_key = body["privateKey"]
 
-def on_thing_registered(response: iotidentity.RegisterThingResponse) -> None:
-    print(f"Thing registered: {response.thing_name}")
+    this_directory = os.path.dirname(__file__)
+
+    with open(
+        os.path.join(
+            this_directory,
+            "certificates/private_key.pem",
+        ),
+        "w",
+    ) as fp:
+        fp.write(private_key)
+
+    with open(
+        os.path.join(
+            this_directory,
+            "certificates/certificate_pem.pem",
+        ),
+        "w",
+    ) as fp:
+        fp.write(certificate_pem)
+
+    print(f"Certificate created {certificate_id}")
 
 
 def main(device_serial_number) -> None:
-    mqtt3.CLIENT_ID = device_serial_number
-    mqtt3.PATH_TO_CERT = "certificates/claim.cert.pem"
-    mqtt3.PATH_TO_KEY = "certificates/claim.private.key"
-    mqtt3.PATH_TO_ROOT = "certificates/AmazonRootCA1.pem"
-
-    TEMPLATE_NAME = "fleet-template"
-    SERIAL_NUMBER = "123456789"
-
-    conn = mqtt3.get_connection()
-    identity = iotidentity.IotIdentityClient(conn)
-
-    # Request permanent certificate
-    identity.subscribe_to_create_keys_and_certificate_accepted(
-        request=iotidentity.CreateKeysAndCertificateSubscriptionRequest(),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_cert_created,
+    mqtt_connection = mqtt3.get_connection(
+        client_id=device_serial_number,
+        cert_filepath="certificates/claim.cert.pem",
+        pri_key_filepath="certificates/claim.private.key",
+        ca_filepath="certificates/AmazonRootCA1.pem",
     )
 
-    identity.publish_create_keys_and_certificate(
-        request=iotidentity.CreateKeysAndCertificateRequest(),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
+    subscribe_accepted_future, _ = mqtt_connection.subscribe(
+        topic="$aws/certificates/create/json/accepted",
+        qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+        callback=on_cert_created,
+    )
+    subscribe_rejected_future, _ = mqtt_connection.subscribe(
+        topic="$aws/certificates/create/json/rejected",
+        qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+        callback=mqtt3.on_message_received,
+    )
+    subscribe_accepted_future.result()
+    subscribe_rejected_future.result()
+
+    mqtt_connection.publish(
+        topic="$aws/certificates/create/json",
+        payload=json.dumps({}),
+        qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
     )
 
     time.sleep(2)
 
-    # Register thing
-    identity.subscribe_to_register_thing_accepted(
-        request=iotidentity.RegisterThingSubscriptionRequest(
-            templateName=TEMPLATE_NAME
-        ),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_thing_registered,
-    )
+    template_name = "fleet-provisioning-template"
+    for topic in [
+        f"$aws/provisioning-templates/{template_name}/provision/json/accepted",
+        f"$aws/provisioning-templates/{template_name}/provision/json/rejected",
+    ]:
+        subscribe_future, _ = mqtt_connection.subscribe(
+            topic=topic,
+            qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
+            callback=mqtt3.on_message_received,
+        )
+        subscribe_future.result()
 
-    identity.publish_register_thing(
-        request=iotidentity.RegisterThingRequest(
-            templateName=TEMPLATE_NAME,
-            certificateOwnershipToken=cert_ownership_token,
-            parameters={"SerialNumber": SERIAL_NUMBER},
+    mqtt_connection.publish(
+        topic=f"$aws/provisioning-templates/{template_name}/provision/json",
+        payload=json.dumps(
+            {
+                "certificateOwnershipToken": certificate_ownership_token,
+                "parameters": {"SerialNumber": device_serial_number},
+            }
         ),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
+        qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
     )
 
     time.sleep(2)

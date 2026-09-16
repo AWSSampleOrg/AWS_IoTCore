@@ -18,21 +18,9 @@ logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
 logger.addHandler(handler)
 logger.propagate = False
 
-# Define ENDPOINT, CLIENT_ID, PATH_TO_CERT, PATH_TO_KEY, PATH_TO_ROOT, MESSAGE, TOPIC, and RANGE
+# Define ENDPOINT, MESSAGE and RANGE
 iot_client = boto3.client("iot")
 ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
-
-CLIENT_ID = "Thing1"
-PATH_TO_CERT = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_filename.pem",
-)
-PATH_TO_KEY = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_key_filename.key",
-)
-PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
-TOPIC = "test/iot"
 
 
 # Callback when connection is accidentally lost.
@@ -77,7 +65,7 @@ def on_resubscribe_complete(resubscribe_future):
 def on_message_received(
     topic: str, payload: bytes, dup: bool, qos: awscrt.mqtt.QoS, retain: bool, **kwargs
 ):
-    logger.debug("on_message_received")
+    logger.debug("[Subscribed topic callback]")
     logger.debug(
         {
             "topic": topic,
@@ -109,22 +97,35 @@ def on_connection_failure(connection: awscrt.mqtt.Connection, callback_data):
 
 
 # Callback when a connection has been disconnected or shutdown successfully
-def on_connection_closed(connection: awscrt.mqtt.Connection, callback_data):
-    logger.debug("on_connection_closed")
+def on_connection_closed(
+    connection: awscrt.mqtt.Connection,
+    callback_data: awscrt.mqtt.OnConnectionClosedData,
+):
+    assert isinstance(callback_data, awscrt.mqtt.OnConnectionFailureData)
+    logger.debug(f"on_connection_closed: {callback_data.error}")
 
 
 def get_connection(
-    cert_filepath=PATH_TO_CERT,
-    pri_key_filepath=PATH_TO_KEY,
-    ca_filepath=PATH_TO_ROOT,
-    client_id=CLIENT_ID,
+    endpoint=ENDPOINT,
+    cert_filepath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_filename.pem",
+    ),
+    pri_key_filepath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_key_filename.key",
+    ),
+    ca_filepath=os.path.join(
+        os.path.dirname(__file__), "certificates/AmazonRootCA1.pem"
+    ),
+    client_id="Thing1",
 ):
     # Spin up resources
     event_loop_group = awscrt.io.EventLoopGroup(1)
     host_resolver = awscrt.io.DefaultHostResolver(event_loop_group)
     client_bootstrap = awscrt.io.ClientBootstrap(event_loop_group, host_resolver)
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
-        endpoint=ENDPOINT,
+        endpoint=endpoint,
         cert_filepath=cert_filepath,
         pri_key_filepath=pri_key_filepath,
         client_bootstrap=client_bootstrap,
@@ -141,7 +142,7 @@ def get_connection(
         on_connection_closed=on_connection_closed,
     )
 
-    logger.debug("Connecting to %s with client ID '%s'...", ENDPOINT, client_id)
+    logger.debug("Connecting to %s with client ID '%s'...", endpoint, client_id)
     # Make the connect() call
     connect_future = mqtt_connection.connect()
     # Future.result() waits until a result is available
@@ -153,9 +154,10 @@ def get_connection(
 def main():
     mqtt_connection = get_connection()
 
-    logger.debug(f"Subscribing to topic '{TOPIC}'...")
+    topic = "test/iot"
+
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=TOPIC, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
+        topic=topic, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
     )
     subscribe_result = subscribe_future.result()
     logger.debug(
@@ -165,7 +167,7 @@ def main():
     data = json.dumps({"index": 0})
     logger.debug(data)
     mqtt_connection.publish(
-        topic=TOPIC, payload=data, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
+        topic=topic, payload=data, qos=awscrt.mqtt.QoS.AT_LEAST_ONCE
     )
     time.sleep(1)
 
