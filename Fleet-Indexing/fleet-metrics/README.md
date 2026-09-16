@@ -20,6 +20,21 @@ Creates a fleet metric to monitor sensors with temperatures > 80°F:
 - Creates fleet metric `high_temp_FM` that runs every 60 seconds
 - Emits count to CloudWatch
 
+## Aggregation Query and APIs
+
+An aggregation query is a definition, not an API call. It has three parts.
+
+```
+query-string        # which things to match (same syntax as search-index)
+aggregation-field   # which field to aggregate (managed field, or custom field registered in step 1)
+aggregation-type    # how to aggregate: Statics | Cardinality | Percentile
+```
+
+The same definition can run two ways:
+
+- **On demand** `GetStatics`, `GetCardinality` and `GetPercentiles` return the value at the moment you call them.
+- **On a schedule** `CreateFleetMetric` scores the definition and emits the result to CloudWatch every `period` seconds.
+
 ## Documentation Example
 
 ```bash

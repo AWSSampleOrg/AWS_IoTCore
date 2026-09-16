@@ -54,6 +54,7 @@ Resources:
               Service: iot.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        # https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AWSIoTThingsRegistration.html
         - arn:aws:iam::aws:policy/service-role/AWSIoTThingsRegistration
 
   ProvisioningTemplate:

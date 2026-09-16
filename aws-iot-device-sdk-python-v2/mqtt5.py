@@ -1,5 +1,5 @@
 # -*- encoding:utf-8 -*-
-from logging import getLogger, StreamHandler, DEBUG
+import logging
 import os
 import json
 import time
@@ -10,27 +10,22 @@ from awscrt import mqtt5
 import boto3
 
 # logger setting
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", logging.DEBUG))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)s] %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+)
 logger.addHandler(handler)
 logger.propagate = False
 
 
 iot_client = boto3.client("iot")
 ENDPOINT = iot_client.describe_endpoint(endpointType="iot:Data-ATS")["endpointAddress"]
-CLIENT_ID = "Thing1"
-PATH_TO_CERT = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_filename.pem",
-)
-PATH_TO_KEY = os.path.join(
-    os.path.dirname(__file__),
-    "certificates/device_cert_key_filename.key",
-)
-PATH_TO_ROOT = os.path.join(os.path.dirname(__file__), "certificates/AmazonRootCA1.pem")
-TOPIC = "test/iot"
 
 # --------------------------------- ARGUMENT PARSING END -----------------------------------------
 TIMEOUT = 100
@@ -60,9 +55,7 @@ def on_lifecycle_stopped(lifecycle_stopped_data: mqtt5.LifecycleStoppedData):
 def on_lifecycle_attempting_connect(
     lifecycle_attempting_connect_data: mqtt5.LifecycleAttemptingConnectData,
 ):
-    logger.debug(
-        f"Lifecycle Connection Attempt\nConnecting to endpoint: '{ENDPOINT}' with client ID'{CLIENT_ID}'"
-    )
+    logger.debug(lifecycle_attempting_connect_data)
 
 
 # Callback for the lifecycle event Connection Success
@@ -104,11 +97,20 @@ def on_lifecycle_disconnection(
     )
 
 
-def get_connection():
+def get_connection(
+    cert_filePath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_filename.pem",
+    ),
+    pri_key_filepath=os.path.join(
+        os.path.dirname(__file__),
+        "certificates/device_cert_key_filename.key",
+    ),
+):
     mqtt_connection = mqtt5_client_builder.mtls_from_path(
         endpoint=ENDPOINT,
-        cert_filepath=PATH_TO_CERT,
-        pri_key_filepath=PATH_TO_KEY,
+        cert_filepath=cert_filePath,
+        pri_key_filepath=pri_key_filepath,
         on_publish_received=on_publish_received,
         on_lifecycle_stopped=on_lifecycle_stopped,
         on_lifecycle_attempting_connect=on_lifecycle_attempting_connect,
@@ -131,10 +133,13 @@ def get_connection():
 
 def main():
     mqtt_connection = get_connection()
+
+    topic = "test/iot"
+
     subscribe_future = mqtt_connection.subscribe(
         subscribe_packet=mqtt5.SubscribePacket(
             subscriptions=[
-                mqtt5.Subscription(topic_filter=TOPIC, qos=mqtt5.QoS.AT_LEAST_ONCE)
+                mqtt5.Subscription(topic_filter=topic, qos=mqtt5.QoS.AT_LEAST_ONCE)
             ]
         )
     )
@@ -147,7 +152,7 @@ def main():
     logger.debug(data)
     mqtt_connection.publish(
         publish_packet=mqtt5.PublishPacket(
-            topic=TOPIC, payload=data, qos=mqtt5.QoS.AT_LEAST_ONCE
+            topic=topic, payload=data, qos=mqtt5.QoS.AT_LEAST_ONCE
         )
     )
     time.sleep(1)

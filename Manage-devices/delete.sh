@@ -14,7 +14,7 @@ for color in "${colors[@]}"; do
 done
 
 aws iot delete-thing-group --thing-group-name $THING_PARENT_GROUP_NAME
-aws iot delete-dynamic-thing-group --thing-group-name LessThan50Wattage
+aws iot delete-dynamic-thing-group --thing-group-name LessThan50PercentInBattery
 
 aws iot update-indexing-configuration \
     --thing-indexing-configuration \

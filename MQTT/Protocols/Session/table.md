@@ -1,22 +1,22 @@
 ## MQTT v3.1.1
 
-| QoS | Clean Session         | Retained Flag | Device Status          | Reconnect Time | Message Retention | Behavior                                     | Notes |
-| --- | --------------------- | ------------- | ---------------------- | -------------- | ----------------- | -------------------------------------------- | ----- |
-| 0   | false (persistent)    | false         | Connected              | N/A            | N/A               | [1]                                          | [6]   |
-| 0   | false (persistent)    | false         | Disconnected           | N/A            | N/A               | [2]                                          | [6]   |
-| 0   | false (persistent)    | true          | Connected              | N/A            | Indefinite        | [1], [5]                                     | [6]   |
-| 0   | false (persistent)    | true          | Disconnected           | N/A            | Indefinite        | [2], [5]                                     | [6]   |
-| 0   | true (non-persistent) | false         | Connected              | N/A            | N/A               | [1]                                          | [7]   |
-| 0   | true (non-persistent) | false         | Disconnected           | N/A            | N/A               | [2]                                          | [7]   |
-| 1   | false (persistent)    | false         | Connected              | N/A            | N/A               | [3]                                          | [8]   |
-| 1   | false (persistent)    | false         | Disconnected           | < 1 hour       | Up to 1 hour      | [4], delivered on reconnect                  | [8]   |
-| 1   | false (persistent)    | false         | Disconnected           | > 1 hour       | Up to 1 hour      | [4], messages discarded after 1 hour         | [8]   |
-| 1   | false (persistent)    | true          | Connected              | N/A            | Indefinite        | [3], [5]                                     | [8]   |
-| 1   | false (persistent)    | true          | Disconnected           | < 1 hour       | Up to 1 hour      | [4], delivered on reconnect, [5]             | [8]   |
-| 1   | true (non-persistent) | false         | Connected              | N/A            | N/A               | [3]                                          | [9]   |
-| 1   | true (non-persistent) | false         | Disconnected           | N/A            | N/A               | [2]                                          | [9]   |
-| 2   | false (persistent)    | false         | Connected/Disconnected | N/A            | N/A               | N/A                                          | [10]  |
-| 2   | true (non-persistent) | false         | Connected/Disconnected | N/A            | N/A               | N/A                                          | [10]  |
+| QoS | Clean Session         | Retained Flag | Device Status          | Reconnect Time | Message Retention | Behavior                             | Notes |
+| --- | --------------------- | ------------- | ---------------------- | -------------- | ----------------- | ------------------------------------ | ----- |
+| 0   | false (persistent)    | false         | Connected              | N/A            | N/A               | [1]                                  | [6]   |
+| 0   | false (persistent)    | false         | Disconnected           | N/A            | N/A               | [2]                                  | [6]   |
+| 0   | false (persistent)    | true          | Connected              | N/A            | Indefinite        | [1], [5]                             | [6]   |
+| 0   | false (persistent)    | true          | Disconnected           | N/A            | Indefinite        | [2], [5]                             | [6]   |
+| 0   | true (non-persistent) | false         | Connected              | N/A            | N/A               | [1]                                  | [7]   |
+| 0   | true (non-persistent) | false         | Disconnected           | N/A            | N/A               | [2]                                  | [7]   |
+| 1   | false (persistent)    | false         | Connected              | N/A            | N/A               | [3]                                  | [8]   |
+| 1   | false (persistent)    | false         | Disconnected           | < 1 hour       | Up to 1 hour      | [4], delivered on reconnect          | [8]   |
+| 1   | false (persistent)    | false         | Disconnected           | > 1 hour       | Up to 1 hour      | [4], messages discarded after 1 hour | [8]   |
+| 1   | false (persistent)    | true          | Connected              | N/A            | Indefinite        | [3], [5]                             | [8]   |
+| 1   | false (persistent)    | true          | Disconnected           | < 1 hour       | Up to 1 hour      | [4], delivered on reconnect, [5]     | [8]   |
+| 1   | true (non-persistent) | false         | Connected              | N/A            | N/A               | [3]                                  | [9]   |
+| 1   | true (non-persistent) | false         | Disconnected           | N/A            | N/A               | [2]                                  | [9]   |
+| 2   | false (persistent)    | false         | Connected/Disconnected | N/A            | N/A               | N/A                                  | [10]  |
+| 2   | true (non-persistent) | false         | Connected/Disconnected | N/A            | N/A               | N/A                                  | [10]  |
 
 **Explanations:**
 
@@ -37,7 +37,7 @@
 | --- | ----------- | ----------------------- | ----------------------- | ------------- | ---------------------- | ------------------- | ------------------------ | -------------------------------------------------- | ----- |
 | 0   | true        | 0 (no session)          | Not set                 | false         | Connected              | N/A                 | N/A                      | [1]                                                | [7]   |
 | 0   | true        | 0 (no session)          | Not set                 | false         | Disconnected           | N/A                 | N/A                      | [2]                                                | [7]   |
-| 0   | true        | 0 (no session)          | Not set                 | true          | Connected              | N/A                 | Until MEI expires        | [1], [12]                                          | [7]   |
+| 0   | true        | 0 (no session)          | Not set                 | true          | Connected              | N/A                 | Indefinite        | [1], [5]                                          | [7]   |
 | 0   | false       | 3600 (1 hour)           | Not set                 | false         | Connected              | N/A                 | N/A                      | [1]                                                | [13]  |
 | 0   | false       | 3600 (1 hour)           | Not set                 | false         | Disconnected           | N/A                 | N/A                      | [2]                                                | [13]  |
 | 1   | true        | 0 (no session)          | Not set                 | false         | Connected              | N/A                 | N/A                      | [3]                                                | [14]  |
@@ -72,9 +72,9 @@
 14. No session = no queuing
 15. Optional (publisher sets, broker discards if expired)
 16. Whichever is shorter
-17. AWS IoT Core enforces 1 hour max regardless of Session Expiry setting
-18. Message Expiry Interval (MEI) takes precedence over session expiry for message retention
-19. AWS IoT Core enforces 1 hour max for message retention even if Session Expiry is longer
+17. Session Expiry is capped by the account's Persistent session expiry period quota (default 1 hour, adjustable up to 7 days).
+18. Retention = min(MEI (Message Expiry Interval), tune left on the session). The MEI timer starts at publish, the session timer at disconnect, and the MEI only shortens retention. it never extends its beyond session expiry.
+19. Session Expiry Interval above the account maximum (default 1 hour) is clamped, and AWS IoT Core returns the adjusted value in the CONNACK.
 
 # Key differences in MQTT v5:
 
@@ -83,8 +83,7 @@
 - **Message Expiry Interval** allows publishers to specify how long a message remains valid (in seconds). If set, the broker will discard the message after this interval expires, even if it hasn't been delivered yet. If not set, messages don't expire based on age (only subject to session/retention limits)
 - **Retained messages in v3.1.1** never expire and remain indefinitely
 - **Retained messages in v5** can have Message Expiry Interval set, after which they are deleted
-- **AWS IoT Core limitation**: Even if Session Expiry Interval is set higher, AWS IoT Core still enforces a 1 hour maximum for message retention
-
+- **AWS IoT Core limitation**: Session Expiry is capped by the account's Persistent session expiry period quota (default 1 hour, adjustable up to 7 days). A larger requested value is clamped and the adjusted value is returned in the CONNACK.
 
 # Comparing MQTT Retained Messages and MQTT Persistent Sessions
 
