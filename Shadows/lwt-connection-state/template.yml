@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::Serverless-2016-10-31"
+Description: AWS IoT Core Sample
+
+Resources:
+  #-------------------------------------------------------
+  #   IoT Core
+  #-------------------------------------------------------
+  TopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: IoT_Core_Shadow_Lwt_IAM_Rule
+      TopicRulePayload:
+        Actions:
+          - Republish:
+              RoleArn: !GetAtt IoTRepublishRole.Arn
+              Topic: $$aws/things/${topic(3)}/shadow/name/connection/update
+              Qos: 1
+        AwsIotSqlVersion: "2016-03-23"
+        RuleDisabled: false
+        Sql: SELECT * FROM 'my/things/+/update'
+
+  # ------------------------------------------------------------#
+  # IAM
+  # ------------------------------------------------------------#
+  IoTRepublishRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: iot.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: IoTRepublishPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: iot:Publish
+                Resource: !Sub arn:${AWS::Partition}:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/*/shadow/name/connection/update
+      RoleName: IoT-Core-Shadow-Lwt-IAM-Role

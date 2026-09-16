@@ -1,6 +1,6 @@
 import base64
 import json
-from logging import getLogger, StreamHandler, DEBUG
+import logging
 import os
 import time
 import mqtt3
@@ -8,13 +8,18 @@ import awscrt
 
 # Command topics (wildcard for any execution ID)
 THING_NAME = "Thing1"
-COMMAND_REQUEST_TOPIC = f"$aws/commands/things/{THING_NAME}/executions/+/request/json"
 
 # logger setting
-logger = getLogger(__name__)
-handler = StreamHandler()
-handler.setLevel(DEBUG)
-logger.setLevel(os.getenv("LOG_LEVEL", DEBUG))
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv("LOG_LEVEL", logging.DEBUG))
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)s] %(funcName)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+)
 logger.addHandler(handler)
 logger.propagate = False
 
@@ -95,18 +100,15 @@ def on_command_received(mqtt_connection: awscrt.mqtt.Connection):
 
 
 def main():
-    # Configuration
-    mqtt3.CLIENT_ID = "claim-device"
-    mqtt3.PATH_TO_CERT = "certificates/claim.cert.pem"
-    mqtt3.PATH_TO_KEY = "certificates/claim.private.key"
-    mqtt3.PATH_TO_ROOT = "certificates/AmazonRootCA1.pem"
-
-    mqtt_connection = mqtt3.get_connection()
-
-    logger.debug(f"Subscribing to topic '{COMMAND_REQUEST_TOPIC}'...")
+    mqtt_connection = mqtt3.mtls_from_path(
+        client_id="claim-device",
+        cert_filepath="certificates/claim.cert.pem",
+        pri_key_filepath="certificates/claim.private.key",
+        ca_filepath="certificates/AmazonRootCA1.pem",
+    )
 
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=COMMAND_REQUEST_TOPIC,
+        topic=f"$aws/commands/things/{THING_NAME}/executions/+/request/json",
         qos=awscrt.mqtt.QoS.AT_LEAST_ONCE,
         callback=on_command_received(mqtt_connection),
     )

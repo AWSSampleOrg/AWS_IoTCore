@@ -1,5 +1,4 @@
 import json
-import base64
 import os
 
 REGION = os.environ["AWS_DEFAULT_REGION"]
